@@ -1,0 +1,90 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum ProductStatus {
+  active
+  expired
+  near_expiry
+  out_of_stock
+}
+
+enum OrderStatus {
+  pending
+  processing
+  completed
+  cancelled
+}
+
+enum TransactionType {
+  sale
+  restock
+  write_off
+}
+
+enum AlertType {
+  expired
+  near_expiry
+  low_stock
+}
+
+model Product {
+  id           String        @id @default(uuid())
+  name         String
+  category     String?
+  quantity     Int           @default(0)
+  unitPrice    Decimal       @db.Decimal(10, 2)
+  expiryDate   DateTime      @db.Date
+  supplier     String?
+  status       ProductStatus @default(active)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  orders       Order[]
+  alerts       Alert[]
+  transactions Transaction[]
+}
+
+model Order {
+  id            String       @id @default(uuid())
+  customerName  String
+  customerPhone String
+  product       Product      @relation(fields: [productId], references: [id])
+  productId     String
+  quantity      Int
+  totalAmount   Decimal      @db.Decimal(10, 2)
+  status        OrderStatus  @default(pending)
+  notes         String?
+  createdAt     DateTime     @default(now())
+  transaction   Transaction?
+}
+
+model Transaction {
+  id        String          @id @default(uuid())
+  order     Order?          @relation(fields: [orderId], references: [id])
+  orderId   String?         @unique
+  product   Product         @relation(fields: [productId], references: [id])
+  productId String
+  type      TransactionType
+  quantity  Int
+  amount    Decimal         @db.Decimal(10, 2)
+  notes     String?
+  createdAt DateTime        @default(now())
+}
+
+model Alert {
+  id          String    @id @default(uuid())
+  product     Product   @relation(fields: [productId], references: [id])
+  productId   String
+  type        AlertType
+  message     String
+  isRead      Boolean   @default(false)
+  triggeredAt DateTime  @default(now())
+}
