@@ -47,6 +47,9 @@ coverage/
 # Misc
 .cache/
 
+# Qwen settings (exclude from repo)
+.qwen/
+
 # Documentation (exclude from repo per requirements)
 PRD.md
 CLAUDE.md
