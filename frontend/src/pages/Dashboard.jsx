@@ -21,19 +21,19 @@ function KPICard({ title, value, trend, icon: Icon, color }) {
   }
 
   return (
-    <Card className={`border-l-4 ${colorStyles[color]}`}>
-      <div className="flex items-center justify-between">
-        <div>
+    <Card className={`border-l-4 ${colorStyles[color]} h-full`}>
+      <div className="flex items-start justify-between gap-4">
+        <div className="min-w-0 flex-1">
           <p className="text-sm font-medium text-gray-500">{title}</p>
-          <p className="mt-2 text-3xl font-bold text-gray-900">{value}</p>
+          <p className="mt-2 text-2xl font-bold text-gray-900 break-words">{value}</p>
           {trend && (
             <div className={`mt-2 flex items-center text-sm ${trend >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-              <TrendingUp size={16} className={trend < 0 ? 'rotate-180' : ''} />
-              <span className="ml-1">{Math.abs(trend)}% vs last period</span>
+              <TrendingUp size={16} className={`flex-shrink-0 ${trend < 0 ? 'rotate-180' : ''}`} />
+              <span className="ml-1 text-xs sm:text-sm truncate">{Math.abs(trend)}% vs last period</span>
             </div>
           )}
         </div>
-        <div className={`p-3 rounded-lg ${color === 'teal' ? 'bg-teal-100' : color === 'green' ? 'bg-green-100' : color === 'amber' ? 'bg-amber-100' : color === 'red' ? 'bg-red-100' : 'bg-blue-100'}`}>
+        <div className={`p-3 rounded-lg flex-shrink-0 ${color === 'teal' ? 'bg-teal-100' : color === 'green' ? 'bg-green-100' : color === 'amber' ? 'bg-amber-100' : color === 'red' ? 'bg-red-100' : 'bg-blue-100'}`}>
           <Icon size={24} className={color === 'teal' ? 'text-teal-600' : color === 'green' ? 'text-green-600' : color === 'amber' ? 'text-amber-600' : color === 'red' ? 'text-red-600' : 'text-blue-600'} />
         </div>
       </div>
@@ -164,8 +164,8 @@ export default function Dashboard() {
         <div className="text-center py-12">Loading dashboard...</div>
       ) : (
         <>
-          {/* KPI Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
+          {/* Financial KPI Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 xl:gap-6 mb-6">
             <KPICard
               title="Sales Today"
               value={formatCurrency(kpiData.todaySales)}
@@ -180,6 +180,10 @@ export default function Dashboard() {
               icon={TrendingUp}
               color="green"
             />
+          </div>
+
+          {/* Operational KPI Cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 xl:gap-6 mb-8">
             <KPICard
               title="Pending Orders"
               value={kpiData.pendingOrders}

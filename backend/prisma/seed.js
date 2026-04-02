@@ -426,7 +426,7 @@ async function main() {
 
   for (let i = 0; i < completedOrdersList.length; i++) {
     const order = completedOrdersList[i]
-    const daysAgo = i * 4 // Spread transactions over time
+    const daysOffset = i * 4 // Spread transactions over time
     
     await db.transaction.create({
       data: {
@@ -435,7 +435,7 @@ async function main() {
         type: 'sale',
         quantity: order.quantity,
         amount: order.totalAmount,
-        createdAt: daysAgo(daysAgo),
+        createdAt: daysAgo(daysOffset),
       },
     })
   }
