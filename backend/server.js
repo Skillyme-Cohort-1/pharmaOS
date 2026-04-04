@@ -4,15 +4,19 @@ import { startExpiryScanner } from './src/jobs/expiryScanner.js'
 import { PrismaClient } from '@prisma/client'
 import { exec } from 'child_process'
 import { promisify } from 'util'
+import path from 'path'
+import { fileURLToPath } from 'url'
 
 const execAsync = promisify(exec)
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = path.dirname(__filename)  // This is /app/backend
 const PORT = process.env.PORT || 3000
 
 async function generatePrismaClient() {
   try {
     console.log('📦 Generating Prisma Client...')
     const { stdout } = await execAsync('npx prisma generate', {
-      cwd: process.cwd(),
+      cwd: __dirname,
       maxBuffer: 1024 * 1024 * 10,
     })
     console.log('✅ Prisma Client generated')
@@ -26,10 +30,9 @@ async function generatePrismaClient() {
 async function runMigrations() {
   try {
     console.log('⏳ Running database migrations...')
-    const backendDir = process.cwd().endsWith('backend') ? process.cwd() : `${process.cwd()}/backend`
     const { stdout, stderr } = await execAsync(
       `npx prisma migrate deploy --skip-generate`,
-      { cwd: backendDir, maxBuffer: 1024 * 1024 * 10 }
+      { cwd: __dirname, maxBuffer: 1024 * 1024 * 10 }
     )
     console.log('✅ Migrations successful')
     if (stderr) console.log('📝 Migration notes:', stderr)
@@ -42,6 +45,9 @@ async function runMigrations() {
 
 async function startServer() {
   try {
+    console.log(`📂 Backend directory: ${__dirname}`)
+    console.log(`🌍 Working directory: ${process.cwd()}`)
+
     // Generate Prisma Client if missing
     await generatePrismaClient()
 
