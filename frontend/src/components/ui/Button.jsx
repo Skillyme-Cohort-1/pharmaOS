@@ -7,21 +7,22 @@ export default function Button({
   onClick,
   type = 'button',
   className = '',
+  fullWidth = false,
   ...props 
 }) {
-  const baseStyles = 'inline-flex items-center justify-center font-medium rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2'
+  const baseStyles = 'inline-flex items-center justify-center font-medium rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 active:scale-95 touch-highlight-transparent'
   
   const variants = {
-    primary: 'bg-teal-600 text-white hover:bg-teal-700 focus:ring-teal-500',
-    secondary: 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-50 focus:ring-teal-500',
-    danger: 'bg-red-600 text-white hover:bg-red-700 focus:ring-red-500',
-    ghost: 'text-gray-600 hover:bg-gray-100 focus:ring-gray-500',
+    primary: 'bg-teal-600 text-white hover:bg-teal-700 focus:ring-teal-500 active:bg-teal-800',
+    secondary: 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-50 focus:ring-teal-500 active:bg-gray-100',
+    danger: 'bg-red-600 text-white hover:bg-red-700 focus:ring-red-500 active:bg-red-800',
+    ghost: 'text-gray-600 hover:bg-gray-100 focus:ring-gray-500 active:bg-gray-200',
   }
 
   const sizes = {
     sm: 'px-3 py-1.5 text-xs',
     md: 'px-4 py-2 text-sm',
-    lg: 'px-6 py-3 text-base',
+    lg: 'px-6 py-3 text-base min-h-12',
   }
 
   return (
@@ -32,6 +33,7 @@ export default function Button({
         ${variants[variant]}
         ${sizes[size]}
         ${disabled || loading ? 'opacity-50 cursor-not-allowed' : ''}
+        ${fullWidth ? 'w-full' : ''}
         ${className}
       `}
       disabled={disabled || loading}

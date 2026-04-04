@@ -15,7 +15,7 @@ export default function Input({
       <input
         id={id}
         className={`
-          w-full px-3 py-2 text-sm border rounded-lg transition-shadow
+          w-full px-3 sm:px-4 py-2.5 sm:py-2 text-base sm:text-sm border rounded-lg transition-shadow
           focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500
           ${error ? 'border-red-500' : 'border-gray-200'}
         `}

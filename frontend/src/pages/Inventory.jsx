@@ -208,13 +208,13 @@ export default function Inventory() {
         </div>
       }
     >
-      {/* Filter Tabs */}
-      <div className="flex gap-2 mb-4">
+      {/* Filter Tabs - Mobile scrollable */}
+      <div className="flex gap-2 mb-4 overflow-x-auto pb-2 -mx-4 px-4 sm:mx-0 sm:px-0">
         {statusTabs.map((tab) => (
           <button
             key={tab.value}
             onClick={() => handleFilterChange(tab.value)}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+            className={`px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors whitespace-nowrap ${
               statusFilter === tab.value
                 ? 'bg-teal-600 text-white'
                 : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
@@ -232,16 +232,17 @@ export default function Inventory() {
           placeholder="Search products..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
+          className="w-full px-3 sm:px-4 py-2.5 sm:py-2 text-base sm:text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
         />
       </div>
 
-      {/* Table */}
+      {/* Table - with mobileCard prop for responsive view */}
       <Table
         columns={columns}
         data={products}
         loading={loading}
         onRowClick={(row) => handleOpenModal(row)}
+        mobileCard={true}
         emptyState={
           <EmptyState
             icon={<Package size={48} />}

@@ -54,17 +54,17 @@ export default function Analytics() {
 
   return (
     <PageWrapper title="Analytics">
-      <div className="space-y-6">
+      <div className="space-y-4 sm:space-y-6">
         {/* Sales Trend Chart */}
         <Card
           title="Revenue Trend"
           action={
-            <div className="flex gap-2">
+            <div className="flex gap-1 sm:gap-2 overflow-x-auto">
               {periodTabs.map((tab) => (
                 <button
                   key={tab.value}
                   onClick={() => setSalesPeriod(tab.value)}
-                  className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${
+                  className={`px-2 sm:px-3 py-1.5 text-xs font-medium rounded-lg transition-colors whitespace-nowrap ${
                     salesPeriod === tab.value
                       ? 'bg-teal-600 text-white'
                       : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
@@ -77,14 +77,14 @@ export default function Analytics() {
           }
         >
           {loading ? (
-            <div className="h-72 flex items-center justify-center text-gray-500">Loading...</div>
+            <div className="h-64 sm:h-72 flex items-center justify-center text-gray-500">Loading...</div>
           ) : (
             <>
               <div className="mb-4">
-                <p className="text-sm text-gray-500">Total Revenue</p>
-                <p className="text-2xl font-bold text-gray-900">{formatCurrency(totalRevenue)}</p>
+                <p className="text-xs sm:text-sm text-gray-500">Total Revenue</p>
+                <p className="text-xl sm:text-2xl font-bold text-gray-900">{formatCurrency(totalRevenue)}</p>
               </div>
-              <ResponsiveContainer width="100%" height={280}>
+              <ResponsiveContainer width="100%" height={240} minHeight={240}>
                 <AreaChart data={salesData}>
                   <defs>
                     <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
@@ -95,16 +95,16 @@ export default function Analytics() {
                   <XAxis
                     dataKey="formattedDate"
                     stroke="#9CA3AF"
-                    fontSize={12}
+                    fontSize={11}
                     tickLine={false}
                     axisLine={false}
                   />
                   <YAxis
                     stroke="#9CA3AF"
-                    fontSize={12}
+                    fontSize={11}
                     tickLine={false}
                     axisLine={false}
-                    tickFormatter={(value) => `KES ${value}`}
+                    tickFormatter={(value) => `${(value / 1000).toFixed(0)}K`}
                   />
                   <Tooltip
                     contentStyle={{
