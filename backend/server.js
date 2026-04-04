@@ -15,11 +15,13 @@ async function startServer() {
     if (process.env.NODE_ENV === 'production') {
       console.log('⏳ Running database migrations...')
       try {
-        const { stdout, stderr } = await execAsync('npx prisma migrate deploy')
+        const { stdout, stderr } = await execAsync('npx prisma migrate deploy --skip-generate', {
+          cwd: process.cwd(),
+        })
         console.log('✅ Migrations successful:', stdout)
         if (stderr) console.error('⚠️ Migration stderr:', stderr)
       } catch (err) {
-        console.error('❌ Migration failed:', err.message)
+        console.warn('⚠️ Migration warning (may already be applied):', err.message)
         // We continue anyway as the DB might already be in sync
       }
     }

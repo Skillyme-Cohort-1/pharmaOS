@@ -39,6 +39,7 @@
   "prisma": {
     "seed": {
       "command": "node prisma/seed.js"
-    }
+    },
+    "schema": "./prisma/schema.prisma"
   }
 }
