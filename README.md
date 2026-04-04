@@ -20,6 +20,29 @@ PharmaOS is a comprehensive internal management system designed for pharmacy ope
 
 ## 📂 Project Structure
 
+```mermaid
+graph TD
+    Root[pharma-os /] --> BE[backend /]
+    Root --> FE[frontend /]
+    
+    BE --> B_Prisma[prisma / schema.prisma]
+    BE --> B_Src[src /]
+    B_Src --> B_App[app.js]
+    B_Src --> B_Ctrl[controllers /]
+    B_Src --> B_Route[routes /]
+    B_Src --> B_Mid[middleware /]
+    B_Src --> B_Utils[utils /]
+    B_Src --> B_Jobs[jobs / expiryScanner]
+
+    FE --> F_Src[src /]
+    F_Src --> F_Page[pages / Dashboard, Inventory, Reports...]
+    F_page --> F_Comp[components / ui, forms, layout, charts]
+    F_Src --> F_Svc[services / api.js]
+    F_Src --> F_Ctx[context / Auth, Toast]
+    F_Src --> F_Hooks[hooks / useProducts, useOrders]
+    F_Src --> F_Utils[utils / reportGenerators]
+```
+
 PharmaOS is architected as a clean Monorepo-style project with clear separation between the API (Backend) and the Interface (Frontend).
 
 ### 🖥️ Backend (/backend)
