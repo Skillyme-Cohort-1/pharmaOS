@@ -2,6 +2,8 @@ import express from 'express'
 import cors from 'cors'
 import helmet from 'helmet'
 import morgan from 'morgan'
+import path from 'path'
+import { fileURLToPath } from 'url'
 import { errorHandler } from './middleware/errorHandler.js'
 import { authenticate } from './middleware/auth.js'
 
@@ -16,10 +18,15 @@ import importRouter from './routes/import.js'
 import promptRouter from './routes/prompt.js'
 import reportsRouter from './routes/reports.js'
 
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = path.dirname(__filename)
+
 const app = express()
 
 // Middleware
-app.use(helmet())
+app.use(helmet({
+  contentSecurityPolicy: false, // Disable for easier production deployment of static assets
+}))
 app.use(cors({
   origin: process.env.CLIENT_URL || 'http://localhost:5173',
   credentials: true,
@@ -27,6 +34,10 @@ app.use(cors({
 app.use(morgan('dev'))
 app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
+
+// Serve static files from the frontend/dist directory
+const frontendPath = path.join(__dirname, '../../../frontend/dist')
+app.use(express.static(frontendPath))
 
 // Health check (public)
 app.get('/health', (req, res) => {
@@ -49,13 +60,9 @@ app.use('/api/import', importRouter)
 app.use('/api/prompt', promptRouter)
 app.use('/api/reports', reportsRouter)
 
-// 404 handler
-app.use((req, res) => {
-  res.status(404).json({
-    success: false,
-    error: 'Route not found',
-    code: 'NOT_FOUND'
-  })
+// SPA Fallback: Serve index.html for any non-API routes
+app.get('*', (req, res) => {
+  res.sendFile(path.join(frontendPath, 'index.html'))
 })
 
 // Global error handler (must be last)
