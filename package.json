@@ -13,7 +13,7 @@
     "build:frontend": "npm run build -w frontend",
     "start:backend": "npm start -w backend",
     "migrate:dev": "npm run migrate:dev -w backend",
-    "build": "npm run build:frontend && npm run build:backend",
+    "build": "npm run build:frontend && cd backend && npm run build && cd ..",
     "start": "npm run start:backend"
   }
 }
