@@ -14,7 +14,6 @@
     "start:backend": "npm start -w backend",
     "migrate:dev": "npm run migrate:dev -w backend",
     "build": "npm run build:frontend && npm run build:backend",
-    "postbuild": "npm run migrate:deploy -w backend",
     "start": "npm run start:backend"
   }
 }
