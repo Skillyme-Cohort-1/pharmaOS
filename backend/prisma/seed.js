@@ -1,4 +1,5 @@
 import prisma from '@prisma/client'
+import bcrypt from 'bcryptjs'
 
 const db = new prisma.PrismaClient()
 
@@ -24,10 +25,23 @@ async function main() {
   await db.transaction.deleteMany()
   await db.order.deleteMany()
   await db.product.deleteMany()
+  await db.user.deleteMany()
 
   console.log('🗑️  Cleared existing data')
 
-  // Create products (40+ total)
+  // Seed default admin user
+  const passwordHash = await bcrypt.hash('pharma123', 12)
+  await db.user.create({
+    data: {
+      email: 'admin@pharmaos.com',
+      name: 'Admin User',
+      passwordHash,
+      role: 'admin',
+    },
+  })
+  console.log('✅ Created default admin user (admin@pharmaos.com / pharma123)')
+
+
   const products = await db.product.createMany({
     data: [
       // Active products (10+)

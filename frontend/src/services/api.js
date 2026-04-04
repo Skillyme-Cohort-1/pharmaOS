@@ -5,10 +5,30 @@ const api = axios.create({
   timeout: 10000,
 })
 
+// Request interceptor - always attach token
+api.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('token')
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`
+    }
+    return config
+  },
+  (error) => Promise.reject(error)
+)
+
 // Response interceptor - unwrap .data and handle errors
 api.interceptors.response.use(
   (response) => response.data,
   (error) => {
+    // Handle 401 Unauthorized globally (but not for login endpoint)
+    if (error.response?.status === 401 && !error.config?.url?.includes('/auth/login')) {
+      if (localStorage.getItem('token')) {
+        localStorage.removeItem('token')
+        window.location.href = '/login'
+      }
+    }
+
     const message = error.response?.data?.error || 'Request failed. Please try again.'
     return Promise.reject(new Error(message))
   }
@@ -65,4 +85,11 @@ export const importApi = {
       headers: { 'Content-Type': 'multipart/form-data' },
     })
   },
+}
+
+// Reports API
+export const reportsApi = {
+  getInventory: () => api.get('/reports/inventory'),
+  getExpiry: () => api.get('/reports/expiry'),
+  getSales: () => api.get('/reports/sales'),
 }

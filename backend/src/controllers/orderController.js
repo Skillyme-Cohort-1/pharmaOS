@@ -106,6 +106,58 @@ export async function createOrder(req, res, next) {
 }
 
 /**
+ * Update order
+ */
+export async function updateOrder(req, res, next) {
+  try {
+    const { id } = req.params
+    const { customerName, customerPhone, productId, quantity } = req.body
+
+    const existingOrder = await prisma.order.findUnique({
+      where: { id }
+    })
+
+    if (!existingOrder) {
+      return sendError(res, 404, 'Order not found', 'NOT_FOUND')
+    }
+    
+    // Cannot structurally modify completed or cancelled orders
+    if (existingOrder.status === 'completed' || existingOrder.status === 'cancelled') {
+        return sendError(res, 400, 'Cannot edit finalized orders', 'FINALIZED')
+    }
+
+    // Fetch product to get updated price
+    const product = await prisma.product.findUnique({
+      where: { id: productId }
+    })
+
+    if (!product) {
+      return sendError(res, 404, 'Product not found', 'NOT_FOUND')
+    }
+
+    const totalAmount = Number(product.unitPrice) * quantity
+
+    const updatedOrder = await prisma.order.update({
+      where: { id },
+      data: {
+        customerName,
+        customerPhone,
+        productId,
+        quantity,
+        totalAmount,
+      },
+      include: {
+        product: { select: { id: true, name: true } }
+      }
+    })
+
+    sendSuccess(res, 200, updatedOrder, 'Order updated successfully')
+  } catch (error) {
+    next(error)
+  }
+}
+
+/**
  * Update order status
  */
 export async function updateOrderStatus(req, res, next) {

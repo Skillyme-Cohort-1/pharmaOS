@@ -10,6 +10,11 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum Role {
+  admin
+  pharmacist
+}
+
 enum ProductStatus {
   active
   expired
@@ -88,3 +93,14 @@ model Alert {
   isRead      Boolean   @default(false)
   triggeredAt DateTime  @default(now())
 }
+
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  name         String
+  passwordHash String
+  role         Role     @default(pharmacist)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+

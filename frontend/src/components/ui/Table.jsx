@@ -6,6 +6,7 @@ export default function Table({
   data = [], 
   loading = false,
   emptyState,
+  onRowClick,
   className = ''
 }) {
   if (loading) {
@@ -66,7 +67,11 @@ export default function Table({
         </thead>
         <tbody className="divide-y divide-gray-100 bg-white">
           {data.map((row, rowIdx) => (
-            <tr key={rowIdx} className="hover:bg-gray-50 transition-colors">
+            <tr 
+              key={rowIdx} 
+              className={`hover:bg-gray-50 transition-colors ${onRowClick ? 'cursor-pointer' : ''}`}
+              onClick={() => onRowClick && onRowClick(row)}
+            >
               {columns.map((col, colIdx) => (
                 <td 
                   key={colIdx} 

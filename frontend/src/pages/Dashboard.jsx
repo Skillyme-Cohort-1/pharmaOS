@@ -1,12 +1,15 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Package, ShoppingCart, AlertTriangle, TrendingUp, DollarSign, AlertCircle } from 'lucide-react'
+import { Package, ShoppingCart, AlertTriangle, TrendingUp, DollarSign, Pencil } from 'lucide-react'
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, Area } from 'recharts'
 import PageWrapper from '../components/layout/PageWrapper'
 import Card from '../components/ui/Card'
 import Button from '../components/ui/Button'
 import Badge from '../components/ui/Badge'
+import ProductModal from '../components/forms/ProductModal'
+import OrderModal from '../components/forms/OrderModal'
 import { useToast } from '../context/ToastContext'
+import { useAuth } from '../context/AuthContext'
 import { formatCurrency } from '../utils/formatCurrency'
 import { formatRelativeTime } from '../utils/formatDate'
 import { productsApi, ordersApi, alertsApi, transactionsApi, promptApi } from '../services/api'
@@ -57,6 +60,28 @@ export default function Dashboard() {
   const [promptLoading, setPromptLoading] = useState(false)
   const [promptResults, setPromptResults] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [allProducts, setAllProducts] = useState([])
+  
+  const { user } = useAuth()
+  const isAdmin = user?.role === 'admin'
+  const [editProduct, setEditProduct] = useState(null)
+  const [editOrder, setEditOrder] = useState(null)
+  const [isProductModalOpen, setIsProductModalOpen] = useState(false)
+  const [isOrderModalOpen, setIsOrderModalOpen] = useState(false)
+
+  const openProductEdit = (item) => {
+    setEditProduct(item)
+    setIsProductModalOpen(true)
+  }
+
+  const openOrderEdit = (item) => {
+    setEditOrder(item)
+    setIsOrderModalOpen(true)
+  }
+
+  const handleModalSuccess = () => {
+    fetchDashboardData() // Refresh dashboard after edit
+  }
 
   useEffect(() => {
     fetchDashboardData()
@@ -78,9 +103,11 @@ export default function Dashboard() {
       const monthAgo = new Date()
       monthAgo.setDate(monthAgo.getDate() - 30)
 
-      const allProducts = productsRes.data || []
-      const expiredCount = allProducts.filter(p => p.status === 'expired').length
-      const lowStockCount = allProducts.filter(p => p.quantity < 10 && p.status !== 'expired').length
+      const productsList = productsRes.data || []
+      const expiredCount = productsList.filter(p => p.status === 'expired').length
+      const lowStockCount = productsList.filter(p => p.quantity < 10 && p.status !== 'expired').length
+
+      setAllProducts(productsList)
 
       setKpiData({
         todaySales: summaryRes.data?.today || 0,
@@ -267,14 +294,31 @@ export default function Dashboard() {
                   alerts.map((alert) => (
                     <div
                       key={alert.id}
-                      onClick={() => handleMarkAlertRead(alert.id)}
-                      className="flex items-start gap-3 py-3 border-b border-gray-100 cursor-pointer hover:bg-gray-50 transition-colors"
+                      className="flex items-start gap-3 py-3 border-b border-gray-100 transition-colors hover:bg-gray-50 group"
                     >
-                      <span className="text-lg">{getAlertIcon(alert.type)}</span>
-                      <div className="flex-1">
+                      <span 
+                        className="text-lg cursor-pointer" 
+                        onClick={() => handleMarkAlertRead(alert.id)}
+                      >
+                        {getAlertIcon(alert.type)}
+                      </span>
+                      <div className="flex-1 cursor-pointer" onClick={() => handleMarkAlertRead(alert.id)}>
                         <p className="text-sm text-gray-700">{alert.message}</p>
                         <p className="text-xs text-gray-400 mt-1">{formatRelativeTime(alert.triggeredAt)}</p>
                       </div>
+                      {isAdmin && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            const prod = allProducts.find(p => p.id === alert.productId)
+                            if (prod) openProductEdit(prod)
+                            else toast.error('Product data not loaded')
+                          }}
+                          className="p-1.5 text-gray-400 hover:text-teal-600 hover:bg-teal-50 rounded transition-colors opacity-0 group-hover:opacity-100"
+                        >
+                          <Pencil size={14} />
+                        </button>
+                      )}
                     </div>
                   ))
                 )}
@@ -294,6 +338,16 @@ export default function Dashboard() {
 
           {/* Prompt-to-Action Bar */}
           <Card>
+            <div className="mb-4">
+              <div className="flex items-center gap-2 mb-1">
+                <span className="text-xl">🔍</span>
+                <h3 className="text-lg font-semibold text-gray-900">Ask PharmaOS</h3>
+              </div>
+              <p className="text-sm text-gray-500">
+                Use natural language to quickly fetch insights, check inventory status, or view operational metrics in real-time.
+              </p>
+            </div>
+            
             <form onSubmit={handlePromptSearch} className="mb-4">
               <div className="flex gap-3">
                 <input
@@ -311,47 +365,99 @@ export default function Dashboard() {
 
             {promptResults && (
               <div className="border-t pt-4">
-                <div className="flex items-center justify-between mb-3">
-                  <h4 className="font-semibold text-gray-900">{promptResults.label}</h4>
-                  <Badge status="completed">{promptResults.count} results</Badge>
-                </div>
-                
-                {promptResults.type === 'get_summary' ? (
-                  <div className="text-2xl font-bold text-gray-900">
-                    {formatCurrency(promptResults.results.total)}
+                {promptResults.success === false ? (
+                  <div>
+                    <h4 className="font-semibold text-gray-900 mb-3">No direct match found. Try one of these:</h4>
+                    <div className="flex flex-wrap gap-2">
+                      {promptResults.suggestions?.map((suggestion, idx) => (
+                        <button
+                          key={idx}
+                          onClick={() => {
+                            setPromptQuery(suggestion)
+                            // Optionally trigger search automatically or let user click
+                          }}
+                          className="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm rounded-lg transition-colors"
+                        >
+                          {suggestion}
+                        </button>
+                      ))}
+                    </div>
                   </div>
-                ) : Array.isArray(promptResults.results) ? (
-                  <div className="space-y-2">
-                    {promptResults.results.slice(0, 5).map((item, idx) => (
-                      <div key={idx} className="flex items-center justify-between py-2 border-b border-gray-100">
-                        <span className="text-sm text-gray-700">
-                          {item.name || item.customerName || 'Item'}
-                        </span>
-                        {item.quantity && (
-                          <span className="text-sm text-gray-500">Qty: {item.quantity}</span>
-                        )}
+                ) : (
+                  <>
+                    <div className="flex items-center justify-between mb-3">
+                      <h4 className="font-semibold text-gray-900">{promptResults.label}</h4>
+                      <Badge status="completed">{promptResults.count} results</Badge>
+                    </div>
+                    
+                    {promptResults.type === 'get_summary' ? (
+                      <div className="text-2xl font-bold text-gray-900">
+                        {formatCurrency(promptResults.results.total)}
                       </div>
-                    ))}
-                  </div>
-                ) : null}
+                    ) : Array.isArray(promptResults.results) ? (
+                      <div className="space-y-2">
+                        {promptResults.results.slice(0, 5).map((item, idx) => (
+                          <div key={idx} className="flex items-center justify-between py-2 border-b border-gray-100 group">
+                            <div>
+                              <span className="text-sm text-gray-700">
+                                {item.name || item.customerName || 'Item'}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-3">
+                              {item.quantity !== undefined && (
+                                <span className="text-sm text-gray-500">Qty: {item.quantity}</span>
+                              )}
+                              {isAdmin && (
+                                <button
+                                  onClick={() => promptResults.type === 'get_orders' ? openOrderEdit(item) : openProductEdit(item)}
+                                  className="p-1 text-gray-400 hover:text-teal-600 rounded transition-colors opacity-0 group-hover:opacity-100"
+                                >
+                                  <Pencil size={14} />
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : null}
 
-                {promptResults.count > 5 && (
-                  <Button 
-                    variant="ghost" 
-                    size="sm"
-                    className="mt-4"
-                    onClick={() => {
-                      if (promptResults.label.includes('Expired')) navigate('/inventory?status=expired')
-                      else if (promptResults.label.includes('Low Stock')) navigate('/inventory?status=out_of_stock')
-                      else if (promptResults.label.includes('Pending')) navigate('/orders?status=pending')
-                    }}
-                  >
-                    View Full List →
-                  </Button>
+                    {promptResults.count > 5 && (
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
+                        className="mt-4"
+                        onClick={() => {
+                          if (promptResults.label.includes('Expired')) navigate('/inventory?status=expired')
+                          else if (promptResults.label.includes('Low Stock')) navigate('/inventory?status=out_of_stock')
+                          else if (promptResults.label.includes('Pending')) navigate('/orders?status=pending')
+                        }}
+                      >
+                        View Full List →
+                      </Button>
+                    )}
+                  </>
                 )}
               </div>
             )}
           </Card>
+        </>
+      )}
+
+      {/* Quick Edit Modals for Admin via Dashboard */}
+      {isAdmin && (
+        <>
+          <ProductModal
+            isOpen={isProductModalOpen}
+            onClose={() => setIsProductModalOpen(false)}
+            product={editProduct}
+            onSuccess={handleModalSuccess}
+          />
+          <OrderModal
+            isOpen={isOrderModalOpen}
+            onClose={() => setIsOrderModalOpen(false)}
+            order={editOrder}
+            onSuccess={handleModalSuccess}
+          />
         </>
       )}
     </PageWrapper>

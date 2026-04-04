@@ -4,6 +4,7 @@ import { Readable } from 'stream'
 import prisma from '../lib/prisma.js'
 import { sendSuccess, sendError } from '../utils/responseHelper.js'
 import { calculateProductStatus } from '../utils/dateUtils.js'
+import { createAlertIfNotExists } from '../utils/alertManager.js'
 
 // Configure multer for memory storage
 const storage = multer.memoryStorage()
