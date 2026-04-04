@@ -11,12 +11,43 @@ PharmaOS is a comprehensive internal management system designed for pharmacy ope
 ## 📋 Features
 
 - **Inventory Management** — Full CRUD operations with status filtering (active, expired, near-expiry, out-of-stock)
-- **Order Management** — Complete order lifecycle from pending to completion with atomic inventory updates
-- **Expiry Detection** — Automated daily scanning with real-time alerts for expiring products
-- **Dashboard** — Real-time KPIs, revenue charts, and intelligent prompt-to-action search
-- **Analytics** — Sales trends and top-performing products visualization
-- **Transaction Log** — Complete audit trail of all financial activities
-- **CSV Import** — Bulk data migration from legacy systems
+- **Quick-Edit Modals** — High-fidelity pop-ups with **View** vs **Edit** modes for rapid inventory and order updates.
+- **Order Lifecycle** — Complete order tracking from pending to completion with atomic inventory updates.
+- **Professional Reports** — Export high-quality **PDF (Landscape)** and **CSV** business analytics for Inventory, Expiry, and Sales.
+- **Automated Expiry Detection** — Daily scanning engine with real-time sidebar alerts.
+- **Intelligent Search** — "Ask PharmaOS" prompt-based search on the dashboard for instant data retrieval.
+- **Transaction Audit** — Real-time tracking of every financial change for transparency.
+
+## 📂 Project Structure
+
+PharmaOS is architected as a clean Monorepo-style project with clear separation between the API (Backend) and the Interface (Frontend).
+
+### 🖥️ Backend (/backend)
+Built with **Express**, **Prisma**, and **PostgreSQL**.
+- `prisma/` — The database heartbeat. Contains the `schema.prisma` definition and the `seed.js` script.
+- `src/`
+  - `app.js` — The core Express application configuration and middleware pipeline.
+  - `controllers/` — The business logic layer. Handlers for products, orders, imports, and **reporting**.
+  - `routes/` — The API routing layer. Defines endpoints and maps them to controllers.
+  - `middleware/` — Security, JWT authentication, Zod validation, and error handling.
+  - `utils/` — Shared helpers for response formatting, logging, and alert management.
+  - `jobs/` — Scheduled tasks, specifically the **Daily Expiry Scanner**.
+
+### 🎨 Frontend (/frontend)
+Built with **React 18**, **Vite**, and **Vanilla/Tailwind CSS**.
+- `src/`
+  - `pages/` — The high-level page views (Dashboard, Inventory, Reports, etc.).
+  - `components/`
+    - `ui/` — Atomic, reusable UI components (Buttons, Inputs, Modals, Tables).
+    - `forms/` — Complex, state-managed forms like the new `ProductModal` and `OrderModal`.
+    - `layout/` — Structural components like the `Sidebar` and `PageWrapper`.
+    - `charts/` — Data visualization using Recharts.
+  - `context/` — Global state management for Authentication and UI Toasts.
+  - `services/` — The API communication layer (Axios instances).
+  - `utils/` — Formatting helpers for currency, dates, and the **PDF Report Generators**.
+  - `hooks/` — Custom React hooks for standardized data fetching.
+
+---
 
 ## 🛠️ Tech Stack
 
@@ -24,17 +55,20 @@ PharmaOS is a comprehensive internal management system designed for pharmacy ope
 - React 18 + Vite
 - Tailwind CSS
 - React Router v6
-- Recharts
-- Lucide React Icons
+- Recharts (Visualization)
+- **jsPDF + AutoTable** (Reporting)
+- Lucide React (Icons)
 - Axios
 
 ### Backend
 - Node.js + Express
-- Prisma ORM
+- **Prisma ORM**
 - PostgreSQL
-- node-cron
-- Multer (file uploads)
-- Zod validation
+- node-cron (Scheduling)
+- Multer (CSV handling)
+- Zod (Validation schema)
+
+---
 
 ## 📦 Local Setup
 
@@ -44,7 +78,6 @@ PharmaOS is a comprehensive internal management system designed for pharmacy ope
 - npm or yarn
 
 ### Backend Setup
-
 ```bash
 cd backend
 npm install
@@ -62,10 +95,7 @@ npm run seed
 npm run dev
 ```
 
-Server will start on `http://localhost:3000`
-
 ### Frontend Setup
-
 ```bash
 cd frontend
 npm install
@@ -77,43 +107,18 @@ cp .env.example .env
 npm run dev
 ```
 
-Frontend will start on `http://localhost:5173`
+---
 
-## 🔐 Environment Variables
+## 📚 Documentation & Guides
 
-### Backend (.env)
-```
-DATABASE_URL="postgresql://user:password@localhost:5432/pharmaos"
-PORT=3000
-CLIENT_URL="http://localhost:5173"
-NODE_ENV="development"
-LOW_STOCK_THRESHOLD=10
-NEAR_EXPIRY_DAYS=7
-```
+For deeper technical dives, refer to our specialized guides:
 
-### Frontend (.env)
-```
-VITE_API_URL="http://localhost:3000/api"
-```
+- [API Reference](API.md) — Detailed request/response schemas for all endpoints.
+- [Database Schema](DATABASE_SETUP.md) — ER diagrams and table structures.
+- [Design Specification](design.md) — UI/UX principles and color tokens.
+- [Deployment Guide](C:\Users\victo\.gemini\antigravity\brain\59abee1a-915a-451d-b29a-93848b90b93a/deployment_guide.md) — Production rollout instructions.
 
-## 📚 API Documentation
-
-Full API documentation available in `docs/` folder. Quick reference:
-
-| Endpoint | Method | Description |
-|---|---|---|
-| `/api/products` | GET, POST | List/create products |
-| `/api/products/:id` | PUT, DELETE | Update/delete product |
-| `/api/orders` | GET, POST | List/create orders |
-| `/api/orders/:id/status` | PUT | Update order status |
-| `/api/transactions` | GET | List transactions |
-| `/api/transactions/summary` | GET | Get revenue summary |
-| `/api/alerts` | GET | List alerts |
-| `/api/alerts/run` | POST | Run expiry scan |
-| `/api/analytics/sales` | GET | Get sales trends |
-| `/api/analytics/top-products` | GET | Get top products |
-| `/api/import/products` | POST | Import CSV |
-| `/api/prompt` | POST | Query resolver |
+---
 
 ## 👥 Team
 
