@@ -1,9 +1,7 @@
 import 'dotenv/config'
 import app from './src/app.js'
 import { startExpiryScanner } from './src/jobs/expiryScanner.js'
-import { PrismaClient } from '@prisma/client'
 
-const prisma = new PrismaClient()
 const PORT = process.env.PORT || 3000
 
 const server = app.listen(PORT, () => {
@@ -15,15 +13,20 @@ const server = app.listen(PORT, () => {
 // Start expiry scanner cron job
 startExpiryScanner()
 
-// Graceful shutdown logic
-const shutdown = async (signal) => {
-  console.log(`${signal} received, shutting down gracefully...`)
-  server.close(async () => {
-    await prisma.$disconnect()
+// Graceful shutdown
+process.on('SIGTERM', () => {
+  console.log('SIGTERM received, shutting down gracefully...')
+  server.close(() => {
     console.log('Server closed')
     process.exit(0)
   })
-}
+})
 
-process.on('SIGTERM', () => shutdown('SIGTERM'))
-process.on('SIGINT', () => shutdown('SIGINT'))
+process.on('SIGINT', () => {
+  console.log('SIGINT received, shutting down gracefully...')
+  server.close(() => {
+    console.log('Server closed')
+    process.exit(0)
+  })
+})
+

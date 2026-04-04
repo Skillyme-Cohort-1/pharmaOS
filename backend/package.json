@@ -7,8 +7,7 @@
   "scripts": {
     "dev": "nodemon server.js",
     "start": "node server.js",
-    "build": "npx prisma generate && npm run migrate:deploy || true",
-    "migrate:deploy": "npx prisma migrate deploy --skip-generate || true",
+    "build": "npx prisma generate",
     "seed": "node prisma/seed.js"
   },
   "keywords": [
