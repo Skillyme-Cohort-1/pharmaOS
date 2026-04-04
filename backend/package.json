@@ -7,7 +7,8 @@
   "scripts": {
     "dev": "nodemon server.js",
     "start": "node server.js",
-    "build": "npx prisma generate",
+    "build": "npm run build:frontend && npx prisma generate",
+    "build:frontend": "cd ../frontend && npm install && npm run build && cd ../backend",
     "seed": "node prisma/seed.js"
   },
   "keywords": [
