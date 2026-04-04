@@ -1,0 +1,27 @@
+# This tells Nixpacks how to build the project
+{ pkgs, ... }:
+{
+  nixpkgs.url = "github:nixos/nixpkgs/nixpkgs-unstable";
+  
+  phases = {
+    setup = ''
+      # Install dependencies
+      npm install
+      cd frontend && npm install && cd ..
+      cd backend && npm install && cd ..
+    '';
+    
+    build = ''
+      # Build frontend
+      cd frontend
+      npm run build
+      cd ..
+      
+      # Generate Prisma client
+      cd backend
+      npx prisma generate
+      npx prisma migrate deploy --skip-generate || true
+      cd ..
+    '';
+  };
+}
