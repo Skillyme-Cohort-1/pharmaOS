@@ -6,28 +6,55 @@ import { exec } from 'child_process'
 import { promisify } from 'util'
 
 const execAsync = promisify(exec)
-const prisma = new PrismaClient()
 const PORT = process.env.PORT || 3000
+
+async function generatePrismaClient() {
+  try {
+    console.log('📦 Generating Prisma Client...')
+    const { stdout } = await execAsync('npx prisma generate', {
+      cwd: process.cwd(),
+      maxBuffer: 1024 * 1024 * 10,
+    })
+    console.log('✅ Prisma Client generated')
+    return true
+  } catch (err) {
+    console.warn('⚠️ Prisma generate warning:', err.message)
+    return false
+  }
+}
+
+async function runMigrations() {
+  try {
+    console.log('⏳ Running database migrations...')
+    const backendDir = process.cwd().endsWith('backend') ? process.cwd() : `${process.cwd()}/backend`
+    const { stdout, stderr } = await execAsync(
+      `npx prisma migrate deploy --skip-generate`,
+      { cwd: backendDir, maxBuffer: 1024 * 1024 * 10 }
+    )
+    console.log('✅ Migrations successful')
+    if (stderr) console.log('📝 Migration notes:', stderr)
+    return true
+  } catch (err) {
+    console.warn('⚠️ Migration warning (may already be applied):', err.message)
+    return false
+  }
+}
 
 async function startServer() {
   try {
-    // Run migrations on startup in production
+    // Generate Prisma Client if missing
+    await generatePrismaClient()
+
+    // Run migrations only in production
     if (process.env.NODE_ENV === 'production') {
-      console.log('⏳ Running database migrations...')
-      try {
-        const { stdout, stderr } = await execAsync('npx prisma migrate deploy --skip-generate', {
-          cwd: process.cwd(),
-        })
-        console.log('✅ Migrations successful:', stdout)
-        if (stderr) console.error('⚠️ Migration stderr:', stderr)
-      } catch (err) {
-        console.warn('⚠️ Migration warning (may already be applied):', err.message)
-        // We continue anyway as the DB might already be in sync
-      }
+      await runMigrations()
     }
 
+    // Initialize Prisma Client after generation
+    const prisma = new PrismaClient()
+
     const server = app.listen(PORT, () => {
-      console.log(`🚀 PharmaOS Monolith running on port ${PORT}`)
+      console.log(`🚀 PharmaOS API running on port ${PORT}`)
       console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`)
       console.log(`🔗 Health check: http://localhost:${PORT}/health`)
     })
