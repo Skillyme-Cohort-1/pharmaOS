@@ -147,11 +147,12 @@ For deeper technical dives, refer to our specialized guides:
 
 **Tech Vanguard**
 - Victor Chogo
-- Lynn Gathoni
-- Mukhoyo
-- Vivian Kioko
-- Julis
+- Daisy Bless
+- Mukhongo Vivian
+- Kioko Julius
 - Paul Gitaranga
+- Stephen Oduor
+  
 
 ## 📄 License
 
