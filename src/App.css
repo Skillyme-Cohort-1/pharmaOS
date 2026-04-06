@@ -1,0 +1,166 @@
+@import "tailwindcss";
+
+/* ====================== */
+/*  MODERN PHARMACY THEME */
+/* ====================== */
+
+:root {
+  --accent: #14b8a6;           /* teal-500 - main pharmacy color */
+  --accent-dark: #0f766e;
+  --accent-light: #5eead4;
+  --accent-bg: #f8fafc;
+  --border: #e2e8f0;
+  --shadow: 0 25px 50px -12px rgb(15 23 42 / 0.15);
+  --text: #0f172a;
+  --text-light: #64748b;
+}
+
+body {
+  @apply bg-slate-50 text-slate-900;
+}
+
+/* ====================== */
+/*  COUNTER BADGE (improved) */
+/* ====================== */
+.counter {
+  @apply inline-flex items-center gap-2 px-5 py-2.5 rounded-3xl text-base font-semibold
+         shadow-md border-2 border-transparent transition-all duration-300
+         hover:shadow-xl hover:-translate-y-0.5;
+
+  color: var(--accent);
+  background: white;
+  box-shadow: var(--shadow);
+
+  &:hover {
+    border-color: var(--accent);
+    background: var(--accent-bg);
+  }
+
+  &:focus-visible {
+    outline: 3px solid var(--accent-light);
+    outline-offset: 4px;
+  }
+}
+
+/* ====================== */
+/*  HERO SECTION (modern 3D + pharmacy touch) */
+/* ====================== */
+.hero {
+  position: relative;
+  @apply flex items-center justify-center py-16 md:py-24;
+
+  .base,
+  .framework,
+  .vite {
+    margin: 0 auto;
+  }
+
+  .base {
+    width: 220px;
+    filter: drop-shadow(0 35px 35px rgb(15 23 42 / 0.2));
+  }
+
+  .framework,
+  .vite {
+    position: absolute;
+    filter: drop-shadow(0 25px 25px rgb(20 184 166 / 0.3));
+  }
+
+  .framework {
+    width: 180px;
+    top: 48px;
+    transform: perspective(1800px) rotateZ(312deg) rotateX(48deg) rotateY(42deg) scale(1.35);
+  }
+
+  .vite {
+    width: 160px;
+    top: 132px;
+    transform: perspective(1800px) rotateZ(298deg) rotateX(38deg) rotateY(36deg) scale(0.75);
+  }
+}
+
+/* ====================== */
+/*  CENTER CONTENT */
+/* ====================== */
+#center {
+  @apply flex flex-col items-center justify-center flex-1 gap-8 px-6 md:px-12 py-12;
+}
+
+/* ====================== */
+/*  NEXT STEPS / DASHBOARD LINKS */
+/* ====================== */
+#next-steps {
+  @apply border-t border-slate-200 bg-white rounded-b-3xl;
+  display: flex;
+
+  & > div {
+    @apply flex-1 px-8 py-10 transition-colors hover:bg-slate-50;
+  }
+
+  .icon {
+    @apply w-9 h-9 mb-6 text-teal-500;
+  }
+
+  @media (max-width: 1024px) {
+    flex-direction: column;
+  }
+}
+
+#docs {
+  @apply border-r border-slate-200 md:border-r;
+  @media (max-width: 1024px) {
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+  }
+}
+
+/* Modern link cards */
+#next-steps ul {
+  @apply list-none p-0 flex flex-wrap gap-3 mt-8;
+
+  .logo {
+    @apply h-5;
+  }
+
+  a {
+    @apply flex items-center gap-3 px-6 py-4 rounded-2xl bg-slate-50 hover:bg-teal-50 
+           text-slate-700 hover:text-teal-700 font-medium text-base
+           transition-all duration-300 hover:shadow-md hover:-translate-y-px;
+  }
+
+  @media (max-width: 1024px) {
+    justify-content: center;
+  }
+}
+
+/* ====================== */
+/*  SPACER & TICKS */
+/* ====================== */
+#spacer {
+  @apply h-20 border-t border-slate-200;
+  @media (max-width: 1024px) {
+    height: 52px;
+  }
+}
+
+.ticks {
+  position: relative;
+  width: 100%;
+
+  &::before,
+  &::after {
+    content: '';
+    position: absolute;
+    top: -5px;
+    border: 6px solid transparent;
+  }
+
+  &::before {
+    left: 0;
+    border-left-color: var(--accent);
+  }
+  &::after {
+    right: 0;
+    border-right-color: var(--accent);
+  }
+}

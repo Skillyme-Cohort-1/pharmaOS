@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Dependencies
 node_modules/
 .pnp
@@ -21,11 +22,16 @@ prisma/*.db-journal
 
 # Logs
 logs/
+=======
+# Logs
+logs
+>>>>>>> 1239918 (Fix Navbar.jsx corruption and integrate dropdown)
 *.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
+<<<<<<< HEAD
 
 # IDE
 .idea/
@@ -55,3 +61,22 @@ PRD.md
 CLAUDE.md
 PLANNING.md
 TASK.md
+=======
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+*.local
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+>>>>>>> 1239918 (Fix Navbar.jsx corruption and integrate dropdown)
