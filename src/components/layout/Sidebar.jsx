@@ -1,79 +1,93 @@
-import { useState } from "react";
+import { Sidebar, Menu, MenuItem } from "react-pro-sidebar";
+import { Link, useLocation } from "react-router-dom";
+import { 
+  Pill, LayoutDashboard, ShoppingCart, Package, Users, Truck, 
+  DollarSign, User, Settings, TrendingUp, TrendingDown, Landmark 
+} from "lucide-react";
 
-export default function Sidebar() {
-  const [activeItem, setActiveItem] = useState("Profile");
+export default function PharmacySidebar({ toggled, setToggled }) {
+  const location = useLocation();
 
-  const menu = [
-    { name: "Dashboard" },
-    { name: "Sales" },
-    { name: "Purchases" },
-    { name: "Products" },
-    { name: "Stock" },
-    { name: "Customers" },
-    { name: "Suppliers" },
-    { name: "Incomes" },
-    { name: "Expenses" },
-    { name: "Tax" },
-    { name: "Profile" },
-  ];
+  // Helper function to check if a link is active
+  const isActive = (path) => location.pathname === path;
 
   return (
-    <div className="w-72 bg-teal-950 text-white h-screen flex flex-col shadow-2xl border-r border-teal-900 rounded-r-3xl overflow-hidden">
-      {/* Logo Header */}
-      <div className="px-6 pt-8 pb-6 border-bborder-teal-800">
+    <Sidebar
+      toggled={toggled}
+      onBackdropClick={() => setToggled(false)}
+      breakPoint="md" // This is the magic! It makes the sidebar responsive at the 'md' tailwind breakpoint
+      backgroundColor="#0f3d3e"
+      rootStyles={{
+        color: "#cbd5e1", // slate-300
+        height: "100%",
+        borderRight: "none",
+      }}
+      className="shadow-2xl md:shadow-none z-50"
+    >
+      {/* Logo Area */}
+      <div className="p-6 border-b border-[#164e4f] mb-4">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 bg-white text-teal-600 rounded-2xl flex items-center justify-center text-2xl shadow-inner">
-        
+          <div className="w-10 h-10 bg-gradient-to-br from-teal-400 to-teal-600 rounded-xl flex justify-center items-center text-white shadow-lg shadow-teal-500/20">
+            <Pill size={24} />
           </div>
-          <h1 className="text-2xl font-bold ">FortyPharma</h1>
-        </div>
-        <p className="text-teal-400 text-sm mt-1 pl-12">Pharmacy OS</p>
-      </div>
-
-      {/* Menu */}
-      <nav className="flex-1 px-4 py-6 space-y-1 overflow-y-auto">
-        {menu.map((item) => {
-          const isActive = activeItem === item.name;
-          return (
-            <button
-              key={item.name}
-              onClick={() => setActiveItem(item.name)}
-              className={`w-full flex items-center gap-3 px-5 py-4 text-left rounded-3xl transition-all duration-200 group
-                ${
-                  isActive
-                    ? "bg-white text-teal-950 shadow-xl"
-                    : "hover:bg-teal-900 hover:text-teal-100"
-                }
-              `}
-            >
-              <span
-                className={`text-2xl transition-transform group-hover:scale-110 ${
-                  isActive ? "text-teal-600" : "text-teal-300"
-                }`}
-              >
-                {item.icon}
-              </span>
-              <span className="font-medium text-lg">{item.name}</span>
-            </button>
-          );
-        })}
-      </nav>
-
-      {/* Bottom Section */}
-      <div className="mt-auto p-6 border-t border-teal-800 bg-teal-900/50">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-teal-400 rounded-2xl flex items-center justify-center text-xl">
-            👤
+          <div>
+            <h2 className="m-0 text-xl font-extrabold text-white tracking-wide">FortyPharma</h2>
+            <p className="m-0 text-teal-400 text-xs font-semibold uppercase tracking-wider mt-0.5">Pharmacy OS</p>
           </div>
-          <div className="flex-1">
-            
-            <p className="text-teal-400 text-xs">Admin</p>
-          </div>
-          <button className="text-teal-400 hover:text-white transition-colors">
-            ⚙️
-          </button>
         </div>
       </div>
-    </div>
+
+      {/* Navigation Menu */}
+      <Menu
+        menuItemStyles={{
+          button: ({ active }) => ({
+            padding: "10px 20px",
+            borderRadius: "12px",
+            margin: "4px 16px",
+            fontWeight: active ? "600" : "500",
+            color: active ? "#ffffff" : "#94a3b8",
+            backgroundColor: active ? "#1b5e5f" : "transparent",
+            "&:hover": {
+              backgroundColor: "#164e4f",
+              color: "#ffffff",
+            },
+            transition: "all 0.2s ease-in-out",
+          }),
+        }}
+      >
+        <MenuItem active={isActive('/dashboard')} icon={<LayoutDashboard size={20} />} component={<Link to="/dashboard" onClick={() => setToggled(false)} />}> Dashboard </MenuItem>
+        <MenuItem active={isActive('/sales')} icon={<DollarSign size={20} />} component={<Link to="/sales" onClick={() => setToggled(false)} />}> Sales </MenuItem>
+        <MenuItem active={isActive('/purchases')} icon={<ShoppingCart size={20} />} component={<Link to="/purchases" onClick={() => setToggled(false)} />}> Purchases </MenuItem>
+        <MenuItem active={isActive('/products')} icon={<Package size={20} />} component={<Link to="/products" onClick={() => setToggled(false)} />}> Products </MenuItem>
+        <MenuItem active={isActive('/stock')} icon={<Package size={20} />} component={<Link to="/stock" onClick={() => setToggled(false)} />}> Stock </MenuItem>
+        <MenuItem active={isActive('/customers')} icon={<Users size={20} />} component={<Link to="/customers" onClick={() => setToggled(false)} />}> Customers </MenuItem>
+        <MenuItem active={isActive('/suppliers')} icon={<Truck size={20} />} component={<Link to="/suppliers" onClick={() => setToggled(false)} />}> Suppliers </MenuItem>
+
+        {/* Replaced SubMenu with Flat Items grouped by a subtle label */}
+        <div className="px-6 mt-6 mb-2 text-[10px] font-bold text-[#5cc3c6] uppercase tracking-widest opacity-80">
+          Finance
+        </div>
+        <MenuItem active={isActive('/finance/incomes')} icon={<TrendingUp size={20} />} component={<Link to="/finance/incomes" onClick={() => setToggled(false)} />}> Incomes </MenuItem>
+        <MenuItem active={isActive('/finance/expenses')} icon={<TrendingDown size={20} />} component={<Link to="/finance/expenses" onClick={() => setToggled(false)} />}> Expenses </MenuItem>
+        <MenuItem active={isActive('/finance/tax')} icon={<Landmark size={20} />} component={<Link to="/finance/tax" onClick={() => setToggled(false)} />}> Tax </MenuItem>
+
+      </Menu>
+
+      {/* Bottom Profile Section (Hidden on mobile as it's in Navbar) */}
+      <div className="mt-auto p-5 border-t border-[#164e4f] bg-black/10 hidden md:block">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-teal-500/20 rounded-xl flex justify-center items-center text-teal-400">
+            <User size={20} />
+          </div>
+          <div className="flex-1 overflow-hidden">
+            <p className="m-0 text-white text-sm font-bold truncate">Admin User</p>
+            <p className="m-0 text-teal-400/80 text-xs font-medium truncate">View Profile</p>
+          </div>
+          <Link to="/settings" className="text-teal-400/60 hover:text-teal-400 transition-colors p-2 rounded-lg hover:bg-white/5">
+            <Settings size={20} />
+          </Link>
+        </div>
+      </div>
+    </Sidebar>
   );
 }
