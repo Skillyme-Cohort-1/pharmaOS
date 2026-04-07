@@ -1,21 +1,18 @@
-import { StrictMode } from 'react'
-import { createRoot } from 'react-dom/client'
-import './index.css'
+import React from 'react'
+import ReactDOM from 'react-dom/client'
 import App from './App.jsx'
-import "./styles/globals.css";
-import React from "react";
-import ReactDOM from "react-dom/client";
-import 'bootstrap/dist/css/bootstrap.min.css';
+import { BrowserRouter } from 'react-router-dom'
+import './styles/globals.css' // <-- THIS IS THE MAGIC LINE WE WERE MISSING!
 
-ReactDOM.createRoot(document.getElementById("root")).render(
-  <React.StrictMode>
-    <App />
-  </React.StrictMode>
-);
+const rootElement = document.getElementById('root');
 
-
-createRoot(document.getElementById('root')).render(
-  <StrictMode>
-    <App />
-  </StrictMode>,
-)
+if (!rootElement._reactRootContainer) {
+  const root = ReactDOM.createRoot(rootElement);
+  root.render(
+    <React.StrictMode>
+      <BrowserRouter>
+        <App />
+      </BrowserRouter>
+    </React.StrictMode>
+  );
+}

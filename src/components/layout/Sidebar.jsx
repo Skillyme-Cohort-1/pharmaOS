@@ -1,8 +1,8 @@
-import { Sidebar, Menu, MenuItem } from "react-pro-sidebar";
+import { Sidebar, Menu, MenuItem, SubMenu } from "react-pro-sidebar";
 import { Link, useLocation } from "react-router-dom";
 import { 
   Pill, LayoutDashboard, ShoppingCart, Package, Users, Truck, 
-  DollarSign, User, Settings, TrendingUp, TrendingDown, Landmark 
+  DollarSign, User, Settings, TrendingUp, TrendingDown, Landmark, Wallet 
 } from "lucide-react";
 
 export default function PharmacySidebar({ toggled, setToggled }) {
@@ -15,7 +15,7 @@ export default function PharmacySidebar({ toggled, setToggled }) {
     <Sidebar
       toggled={toggled}
       onBackdropClick={() => setToggled(false)}
-      breakPoint="md" // This is the magic! It makes the sidebar responsive at the 'md' tailwind breakpoint
+      breakPoint="md" // This makes the sidebar responsive at the 'md' tailwind breakpoint
       backgroundColor="#0f3d3e"
       rootStyles={{
         color: "#cbd5e1", // slate-300
@@ -62,14 +62,19 @@ export default function PharmacySidebar({ toggled, setToggled }) {
         <MenuItem active={isActive('/stock')} icon={<Package size={20} />} component={<Link to="/stock" onClick={() => setToggled(false)} />}> Stock </MenuItem>
         <MenuItem active={isActive('/customers')} icon={<Users size={20} />} component={<Link to="/customers" onClick={() => setToggled(false)} />}> Customers </MenuItem>
         <MenuItem active={isActive('/suppliers')} icon={<Truck size={20} />} component={<Link to="/suppliers" onClick={() => setToggled(false)} />}> Suppliers </MenuItem>
+        <MenuItem active={isActive('/staff')} icon={<User size={20} />} component={<Link to="/staff" onClick={() => setToggled(false)} />}> Staff </MenuItem>
+        <MenuItem active={isActive('/reports')} icon={<LayoutDashboard size={20} />} component={<Link to="/reports" onClick={() => setToggled(false)} />}> Reports </MenuItem>
 
-        {/* Replaced SubMenu with Flat Items grouped by a subtle label */}
-        <div className="px-6 mt-6 mb-2 text-[10px] font-bold text-[#5cc3c6] uppercase tracking-widest opacity-80">
-          Finance
-        </div>
-        <MenuItem active={isActive('/finance/incomes')} icon={<TrendingUp size={20} />} component={<Link to="/finance/incomes" onClick={() => setToggled(false)} />}> Incomes </MenuItem>
-        <MenuItem active={isActive('/finance/expenses')} icon={<TrendingDown size={20} />} component={<Link to="/finance/expenses" onClick={() => setToggled(false)} />}> Expenses </MenuItem>
-        <MenuItem active={isActive('/finance/tax')} icon={<Landmark size={20} />} component={<Link to="/finance/tax" onClick={() => setToggled(false)} />}> Tax </MenuItem>
+        {/* Finance Dropdown (SubMenu) */}
+        <SubMenu 
+          label="Finance" 
+          icon={<Wallet size={20} />}
+          defaultOpen={location.pathname.includes('/finance')} 
+        >
+          <MenuItem active={isActive('/finance/incomes')} icon={<TrendingUp size={20} />} component={<Link to="/finance/incomes" onClick={() => setToggled(false)} />}> Incomes </MenuItem>
+          <MenuItem active={isActive('/finance/expenses')} icon={<TrendingDown size={20} />} component={<Link to="/finance/expenses" onClick={() => setToggled(false)} />}> Expenses </MenuItem>
+          <MenuItem active={isActive('/finance/tax')} icon={<Landmark size={20} />} component={<Link to="/finance/tax" onClick={() => setToggled(false)} />}> Tax </MenuItem>
+        </SubMenu>
 
       </Menu>
 
