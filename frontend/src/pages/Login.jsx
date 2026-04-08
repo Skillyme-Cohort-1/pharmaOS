@@ -109,9 +109,23 @@ export default function Login() {
           {/* Development hint */}
           {import.meta.env.DEV && (
             <div className="mt-8 p-4 bg-blue-50 border border-blue-100 rounded-lg text-sm text-blue-800">
-              <strong>Dev Helper:</strong><br />
-              Email: <code>admin@pharmaos.com</code> <br />
-              Pass: <code>pharma123</code>
+              <div className="flex items-center justify-between mb-2">
+                <strong>Dev Helper:</strong>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEmail('admin@pharmaos.com')
+                    setPassword('pharma123')
+                  }}
+                  className="px-3 py-1 bg-blue-600 text-white text-xs rounded-md hover:bg-blue-700 transition-colors"
+                >
+                  Auto-fill
+                </button>
+              </div>
+              <div className="space-y-1">
+                <div>Email: <code>admin@pharmaos.com</code></div>
+                <div>Pass: <code>pharma123</code></div>
+              </div>
             </div>
           )}
         </div>

@@ -1,468 +1,325 @@
 import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { Package, ShoppingCart, AlertTriangle, TrendingUp, DollarSign, Pencil } from 'lucide-react'
-import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, Area } from 'recharts'
+import { Package, Users, UserSquare2, AlertTriangle, TrendingUp, TrendingDown, MoreHorizontal, ShoppingCart } from 'lucide-react'
+import { 
+  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, 
+  PieChart, Pie, Cell, LineChart, Line, CartesianGrid 
+} from 'recharts'
 import PageWrapper from '../components/layout/PageWrapper'
 import Card from '../components/ui/Card'
-import Button from '../components/ui/Button'
-import Badge from '../components/ui/Badge'
-import ProductModal from '../components/forms/ProductModal'
-import OrderModal from '../components/forms/OrderModal'
-import { useToast } from '../context/ToastContext'
-import { useAuth } from '../context/AuthContext'
 import { formatCurrency } from '../utils/formatCurrency'
-import { formatRelativeTime } from '../utils/formatDate'
-import { productsApi, ordersApi, alertsApi, transactionsApi, promptApi } from '../services/api'
+import { productsApi, ordersApi, analyticsApi } from '../services/api'
 
-function KPICard({ title, value, trend, icon: Icon, color }) {
-  const colorStyles = {
-    teal: 'border-teal-500',
-    green: 'border-green-500',
-    amber: 'border-amber-500',
-    red: 'border-red-500',
-    blue: 'border-blue-500',
+// --- Mock Data for Frontend-First Redesign ---
+const MOCK_STATS = {
+  totalCustomers: 9,
+  totalSuppliers: 6,
+  stockMedicine: 7330,
+  expiredMedicine: 5,
+  trends: {
+    customers: '+0 Today',
+    suppliers: '+0 Today',
+    stock: '+0 Today',
+    expired: '+0 Today'
   }
+}
 
+const PROFIT_LOSS_DATA = [
+  { month: 'Jan', profit: 4000, loss: 2400 },
+  { month: 'Feb', profit: 3000, loss: 1398 },
+  { month: 'Mar', profit: 2000, loss: 9800 },
+  { month: 'Apr', profit: 2780, loss: 3908 },
+  { month: 'May', profit: 1890, loss: 4800 },
+  { month: 'Jun', profit: 2390, loss: 3800 },
+  { month: 'Jul', profit: 3490, loss: 4300 },
+]
+
+const OVERALL_REPORT_DATA = [
+  { name: 'Income', value: 300, color: '#01B81A' },
+  { name: 'Purchase', value: 200, color: '#00987F' },
+  { name: 'Expense', value: 100, color: '#EF4444' },
+  { name: 'Sales', value: 400, color: '#8231D3' },
+]
+
+const SALES_PURCHASE_DATA = [
+  { day: '01', sales: 400, purchase: 240 },
+  { day: '05', sales: 300, purchase: 139 },
+  { day: '10', sales: 200, purchase: 980 },
+  { day: '15', sales: 278, purchase: 390 },
+  { day: '20', sales: 189, purchase: 480 },
+  { day: '25', sales: 239, purchase: 380 },
+  { day: '30', sales: 349, purchase: 430 },
+]
+
+const TOP_CUSTOMERS = [
+  { name: 'Walk In Customer', phone: '0712345678', initial: 'WC' },
+  { name: 'Nairobi Pharmacy', phone: '0722334455', initial: 'NP' },
+  { name: 'City Hospital', phone: '0700112233', initial: 'CH' },
+]
+
+// --- Components ---
+
+function MetricCard({ title, value, trend, icon: Icon, colorClass, iconBg }) {
   return (
-    <Card className={`border-l-4 ${colorStyles[color]} h-full`}>
-      <div className="flex items-start justify-between gap-4">
-        <div className="min-w-0 flex-1">
-          <p className="text-sm font-medium text-gray-500">{title}</p>
-          <p className="mt-2 text-2xl font-bold text-gray-900 break-words">{value}</p>
-          {trend && (
-            <div className={`mt-2 flex items-center text-sm ${trend >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-              <TrendingUp size={16} className={`flex-shrink-0 ${trend < 0 ? 'rotate-180' : ''}`} />
-              <span className="ml-1 text-xs sm:text-sm truncate">{Math.abs(trend)}% vs last period</span>
-            </div>
-          )}
+    <Card className="border-none shadow-sm h-full">
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-sm font-medium text-gray-500">{title}</h3>
+        <div className={`w-10 h-10 rounded-full flex items-center justify-center ${iconBg}`}>
+          <Icon size={20} className={colorClass} />
         </div>
-        <div className={`p-3 rounded-lg flex-shrink-0 ${color === 'teal' ? 'bg-teal-100' : color === 'green' ? 'bg-green-100' : color === 'amber' ? 'bg-amber-100' : color === 'red' ? 'bg-red-100' : 'bg-blue-100'}`}>
-          <Icon size={24} className={color === 'teal' ? 'text-teal-600' : color === 'green' ? 'text-green-600' : color === 'amber' ? 'text-amber-600' : color === 'red' ? 'text-red-600' : 'text-blue-600'} />
-        </div>
+      </div>
+      <div className="space-y-1">
+        <p className="text-2xl font-bold text-gray-900">{value}</p>
+        <p className="text-xs text-gray-400 font-medium">
+          <span className={trend.includes('+') ? 'text-green-500' : 'text-red-500'}>{trend}</span>
+        </p>
       </div>
     </Card>
   )
 }
 
 export default function Dashboard() {
-  const navigate = useNavigate()
-  const toast = useToast()
-  const [kpiData, setKpiData] = useState({
-    todaySales: 0,
-    monthlyRevenue: 0,
-    pendingOrders: 0,
-    expiredProducts: 0,
-    lowStock: 0,
+  const [data, setData] = useState({
+    products: [],
+    lowStock: [],
+    expired: [],
+    salesTrend: []
   })
-  const [salesTrend, setSalesTrend] = useState([])
-  const [alerts, setAlerts] = useState([])
-  const [promptQuery, setPromptQuery] = useState('')
-  const [promptLoading, setPromptLoading] = useState(false)
-  const [promptResults, setPromptResults] = useState(null)
   const [loading, setLoading] = useState(true)
-  const [allProducts, setAllProducts] = useState([])
-  
-  const { user } = useAuth()
-  const isAdmin = user?.role === 'admin'
-  const [editProduct, setEditProduct] = useState(null)
-  const [editOrder, setEditOrder] = useState(null)
-  const [isProductModalOpen, setIsProductModalOpen] = useState(false)
-  const [isOrderModalOpen, setIsOrderModalOpen] = useState(false)
-
-  const openProductEdit = (item) => {
-    setEditProduct(item)
-    setIsProductModalOpen(true)
-  }
-
-  const openOrderEdit = (item) => {
-    setEditOrder(item)
-    setIsOrderModalOpen(true)
-  }
-
-  const handleModalSuccess = () => {
-    fetchDashboardData() // Refresh dashboard after edit
-  }
 
   useEffect(() => {
-    fetchDashboardData()
+    fetchData()
   }, [])
 
-  const fetchDashboardData = async () => {
+  const fetchData = async () => {
     setLoading(true)
     try {
-      const [summaryRes, ordersRes, productsRes, alertsRes, trendRes] = await Promise.all([
-        transactionsApi.getSummary(),
-        ordersApi.getAll({ status: 'pending' }),
+      const [productsRes, ordersRes, trendRes] = await Promise.all([
         productsApi.getAll({}),
-        alertsApi.getAll({ is_read: 'false', limit: 5 }),
-        analyticsApi.sales(7),
+        ordersApi.getAll({}),
+        analyticsApi.sales(30)
       ])
 
-      const todayStart = new Date()
-      todayStart.setHours(0, 0, 0, 0)
-      const monthAgo = new Date()
-      monthAgo.setDate(monthAgo.getDate() - 30)
-
-      const productsList = productsRes.data || []
-      const expiredCount = productsList.filter(p => p.status === 'expired').length
-      const lowStockCount = productsList.filter(p => p.quantity < 10 && p.status !== 'expired').length
-
-      setAllProducts(productsList)
-
-      setKpiData({
-        todaySales: summaryRes.data?.today || 0,
-        monthlyRevenue: summaryRes.data?.month || 0,
-        pendingOrders: ordersRes.data?.length || 0,
-        expiredProducts: expiredCount,
-        lowStock: lowStockCount,
+      const products = productsRes.data || []
+      setData({
+        products,
+        lowStock: products.filter(p => p.quantity < 10).slice(0, 5),
+        expired: products.filter(p => p.status === 'expired').slice(0, 5),
+        salesTrend: trendRes.data?.data || []
       })
-
-      setSalesTrend(trendRes.data?.data || [])
-      setAlerts(alertsRes.data || [])
     } catch (err) {
-      toast.error('Failed to load dashboard data')
+      console.error('Failed to fetch dashboard data', err)
     } finally {
       setLoading(false)
     }
   }
 
-  const handleRunScan = async () => {
-    try {
-      const res = await alertsApi.runScan()
-      toast.success(res.message || 'Expiry scan completed')
-      fetchDashboardData()
-    } catch (err) {
-      toast.error('Failed to run expiry scan')
-    }
-  }
-
-  const handlePromptSearch = async (e) => {
-    e.preventDefault()
-    if (!promptQuery.trim()) return
-
-    setPromptLoading(true)
-    try {
-      const res = await promptApi.query(promptQuery)
-      setPromptResults(res.data)
-    } catch (err) {
-      toast.error('Failed to process query')
-    } finally {
-      setPromptLoading(false)
-    }
-  }
-
-  const handleMarkAlertRead = async (alertId) => {
-    try {
-      await alertsApi.markRead(alertId)
-      setAlerts(prev => prev.filter(a => a.id !== alertId))
-    } catch (err) {
-      toast.error('Failed to mark alert as read')
-    }
-  }
-
-  const handleMarkAllRead = async () => {
-    try {
-      await alertsApi.markAllRead()
-      setAlerts([])
-    } catch (err) {
-      toast.error('Failed to mark all as read')
-    }
-  }
-
-  const getAlertIcon = (type) => {
-    switch (type) {
-      case 'expired': return '🔴'
-      case 'near_expiry': return '🟠'
-      case 'low_stock': return '🟡'
-      default: return '⚪'
-    }
-  }
-
   return (
-    <PageWrapper 
-      title="Dashboard" 
-      action={
-        <Button onClick={handleRunScan} variant="secondary">
-          Run Expiry Scan ▶
-        </Button>
-      }
-    >
-      {loading ? (
-        <div className="text-center py-12">Loading dashboard...</div>
-      ) : (
-        <>
-          {/* Financial KPI Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 xl:gap-6 mb-6">
-            <KPICard
-              title="Sales Today"
-              value={formatCurrency(kpiData.todaySales)}
-              trend={12}
-              icon={DollarSign}
-              color="teal"
-            />
-            <KPICard
-              title="Monthly Revenue"
-              value={formatCurrency(kpiData.monthlyRevenue)}
-              trend={8}
-              icon={TrendingUp}
-              color="green"
-            />
+    <PageWrapper>
+      {/* 4-Card KPI Header */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <MetricCard 
+          title="Total Customer" 
+          value={MOCK_STATS.totalCustomers} 
+          trend={MOCK_STATS.trends.customers}
+          icon={Users}
+          colorClass="text-forty-accent"
+          iconBg="bg-forty-accent/10"
+        />
+        <MetricCard 
+          title="Total Supplier" 
+          value={MOCK_STATS.totalSuppliers} 
+          trend={MOCK_STATS.trends.suppliers}
+          icon={UserSquare2}
+          colorClass="text-forty-primary"
+          iconBg="bg-forty-primary/10"
+        />
+        <MetricCard 
+          title="Stock Medicine" 
+          value={MOCK_STATS.stockMedicine} 
+          trend={MOCK_STATS.trends.stock}
+          icon={Package}
+          colorClass="text-blue-500"
+          iconBg="bg-blue-500/10"
+        />
+        <MetricCard 
+          title="Expired Medicine" 
+          value={MOCK_STATS.expiredMedicine} 
+          trend={MOCK_STATS.trends.expired}
+          icon={AlertTriangle}
+          colorClass="text-forty-red"
+          iconBg="bg-forty-red/10"
+        />
+      </div>
+
+      {/* Main Charts Section */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+        {/* Profit / Loss Bar Chart */}
+        <Card title="Profit / Loss" className="lg:col-span-2 shadow-sm border-none">
+          <div className="h-[300px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={PROFIT_LOSS_DATA}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
+                <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{fill: '#9ca3af', fontSize: 12}} />
+                <YAxis axisLine={false} tickLine={false} tick={{fill: '#9ca3af', fontSize: 12}} />
+                <Tooltip cursor={{fill: '#f9fafb'}} contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'}} />
+                <Bar dataKey="profit" fill="#00987F" radius={[4, 4, 0, 0]} barSize={20} />
+                <Bar dataKey="loss" fill="#FFB444" radius={[4, 4, 0, 0]} barSize={20} />
+              </BarChart>
+            </ResponsiveContainer>
           </div>
+        </Card>
 
-          {/* Operational KPI Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 xl:gap-6 mb-8">
-            <KPICard
-              title="Pending Orders"
-              value={kpiData.pendingOrders}
-              icon={ShoppingCart}
-              color="amber"
-            />
-            <KPICard
-              title="Expired Products"
-              value={kpiData.expiredProducts}
-              icon={AlertTriangle}
-              color="red"
-            />
-            <KPICard
-              title="Low Stock Items"
-              value={kpiData.lowStock}
-              icon={Package}
-              color="blue"
-            />
-          </div>
-
-          {/* Charts and Alerts */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-            {/* Revenue Chart */}
-            <Card title="7-Day Revenue Trend" className="lg:col-span-2">
-              <ResponsiveContainer width="100%" height={280}>
-                <LineChart data={salesTrend}>
-                  <XAxis 
-                    dataKey="formattedDate" 
-                    stroke="#9CA3AF"
-                    fontSize={12}
-                    tickLine={false}
-                    axisLine={false}
-                  />
-                  <YAxis 
-                    stroke="#9CA3AF"
-                    fontSize={12}
-                    tickLine={false}
-                    axisLine={false}
-                    tickFormatter={(value) => `KES ${value}`}
-                  />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: 'white',
-                      border: '1px solid #E5E7EB',
-                      borderRadius: '8px',
-                      boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
-                    }}
-                    formatter={(value) => formatCurrency(value)}
-                  />
-                  <Area
-                    type="monotone"
-                    dataKey="amount"
-                    stroke="#0D9488"
-                    strokeWidth={2}
-                    fill="url(#colorAmount)"
-                    fillOpacity={0.3}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="amount"
-                    stroke="#0D9488"
-                    strokeWidth={2}
-                    dot={false}
-                  />
-                  <defs>
-                    <linearGradient id="colorAmount" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#0D9488" stopOpacity={0.3} />
-                      <stop offset="95%" stopColor="#0D9488" stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-                </LineChart>
-              </ResponsiveContainer>
-            </Card>
-
-            {/* Alerts Panel */}
-            <Card title="Recent Alerts">
-              <div className="space-y-3 max-h-80 overflow-y-auto">
-                {alerts.length === 0 ? (
-                  <p className="text-sm text-gray-500 text-center py-4">No new alerts</p>
-                ) : (
-                  alerts.map((alert) => (
-                    <div
-                      key={alert.id}
-                      className="flex items-start gap-3 py-3 border-b border-gray-100 transition-colors hover:bg-gray-50 group"
-                    >
-                      <span 
-                        className="text-lg cursor-pointer" 
-                        onClick={() => handleMarkAlertRead(alert.id)}
-                      >
-                        {getAlertIcon(alert.type)}
-                      </span>
-                      <div className="flex-1 cursor-pointer" onClick={() => handleMarkAlertRead(alert.id)}>
-                        <p className="text-sm text-gray-700">{alert.message}</p>
-                        <p className="text-xs text-gray-400 mt-1">{formatRelativeTime(alert.triggeredAt)}</p>
-                      </div>
-                      {isAdmin && (
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            const prod = allProducts.find(p => p.id === alert.productId)
-                            if (prod) openProductEdit(prod)
-                            else toast.error('Product data not loaded')
-                          }}
-                          className="p-1.5 text-gray-400 hover:text-teal-600 hover:bg-teal-50 rounded transition-colors opacity-0 group-hover:opacity-100"
-                        >
-                          <Pencil size={14} />
-                        </button>
-                      )}
-                    </div>
-                  ))
-                )}
-              </div>
-              {alerts.length > 0 && (
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  onClick={handleMarkAllRead}
-                  className="w-full mt-4"
+        {/* Overall Report Donut Chart */}
+        <Card title="Overall Report" className="shadow-sm border-none">
+          <div className="h-[240px] relative">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={OVERALL_REPORT_DATA}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={60}
+                  outerRadius={80}
+                  paddingAngle={5}
+                  dataKey="value"
                 >
-                  Mark All Read
-                </Button>
-              )}
-            </Card>
-          </div>
-
-          {/* Prompt-to-Action Bar */}
-          <Card>
-            <div className="mb-4">
-              <div className="flex items-center gap-2 mb-1">
-                <span className="text-xl">🔍</span>
-                <h3 className="text-lg font-semibold text-gray-900">Ask PharmaOS</h3>
-              </div>
-              <p className="text-sm text-gray-500">
-                Use natural language to quickly fetch insights, check inventory status, or view operational metrics in real-time.
-              </p>
+                  {OVERALL_REPORT_DATA.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.color} />
+                  ))}
+                </Pie>
+                <Tooltip />
+              </PieChart>
+            </ResponsiveContainer>
+            <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+              <p className="text-2xl font-bold text-gray-900">0</p>
+              <p className="text-xs text-gray-400">Today Profit</p>
             </div>
-            
-            <form onSubmit={handlePromptSearch} className="mb-4">
-              <div className="flex gap-3">
-                <input
-                  type="text"
-                  value={promptQuery}
-                  onChange={(e) => setPromptQuery(e.target.value)}
-                  placeholder="Try: 'show expired drugs', 'low stock', 'pending orders'"
-                  className="flex-1 px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
-                />
-                <Button type="submit" loading={promptLoading}>
-                  Search
-                </Button>
+          </div>
+          {/* Legend */}
+          <div className="grid grid-cols-2 gap-4 mt-4">
+            {OVERALL_REPORT_DATA.map((item) => (
+              <div key={item.name} className="flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full" style={{ backgroundColor: item.color }} />
+                <span className="text-xs text-gray-500 font-medium">{item.name}</span>
               </div>
-            </form>
+            ))}
+          </div>
+        </Card>
+      </div>
 
-            {promptResults && (
-              <div className="border-t pt-4">
-                {promptResults.success === false ? (
-                  <div>
-                    <h4 className="font-semibold text-gray-900 mb-3">No direct match found. Try one of these:</h4>
-                    <div className="flex flex-wrap gap-2">
-                      {promptResults.suggestions?.map((suggestion, idx) => (
-                        <button
-                          key={idx}
-                          onClick={() => {
-                            setPromptQuery(suggestion)
-                            // Optionally trigger search automatically or let user click
-                          }}
-                          className="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm rounded-lg transition-colors"
-                        >
-                          {suggestion}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                ) : (
-                  <>
-                    <div className="flex items-center justify-between mb-3">
-                      <h4 className="font-semibold text-gray-900">{promptResults.label}</h4>
-                      <Badge status="completed">{promptResults.count} results</Badge>
-                    </div>
-                    
-                    {promptResults.type === 'get_summary' ? (
-                      <div className="text-2xl font-bold text-gray-900">
-                        {formatCurrency(promptResults.results.total)}
-                      </div>
-                    ) : Array.isArray(promptResults.results) ? (
-                      <div className="space-y-2">
-                        {promptResults.results.slice(0, 5).map((item, idx) => (
-                          <div key={idx} className="flex items-center justify-between py-2 border-b border-gray-100 group">
-                            <div>
-                              <span className="text-sm text-gray-700">
-                                {item.name || item.customerName || 'Item'}
-                              </span>
-                            </div>
-                            <div className="flex items-center gap-3">
-                              {item.quantity !== undefined && (
-                                <span className="text-sm text-gray-500">Qty: {item.quantity}</span>
-                              )}
-                              {isAdmin && (
-                                <button
-                                  onClick={() => promptResults.type === 'get_orders' ? openOrderEdit(item) : openProductEdit(item)}
-                                  className="p-1 text-gray-400 hover:text-teal-600 rounded transition-colors opacity-0 group-hover:opacity-100"
-                                >
-                                  <Pencil size={14} />
-                                </button>
-                              )}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    ) : null}
+      {/* Secondary Charts Section */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+        {/* Sales & Purchase Trends */}
+        <Card title="Sales & Purchase" className="lg:col-span-2 shadow-sm border-none">
+          <div className="h-[300px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={SALES_PURCHASE_DATA}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
+                <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{fill: '#9ca3af', fontSize: 12}} />
+                <YAxis axisLine={false} tickLine={false} tick={{fill: '#9ca3af', fontSize: 12}} />
+                <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'}} />
+                <Line type="monotone" dataKey="sales" stroke="#8231D3" strokeWidth={3} dot={false} />
+                <Line type="monotone" dataKey="purchase" stroke="#00987F" strokeWidth={3} dot={false} />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        </Card>
 
-                    {promptResults.count > 5 && (
-                      <Button 
-                        variant="ghost" 
-                        size="sm"
-                        className="mt-4"
-                        onClick={() => {
-                          if (promptResults.label.includes('Expired')) navigate('/inventory?status=expired')
-                          else if (promptResults.label.includes('Low Stock')) navigate('/inventory?status=out_of_stock')
-                          else if (promptResults.label.includes('Pending')) navigate('/orders?status=pending')
-                        }}
-                      >
-                        View Full List →
-                      </Button>
-                    )}
-                  </>
+        {/* Low Stock Table */}
+        <Card 
+          title="Low Stock" 
+          subtitle="Total Summary" 
+          action={<button className="text-xs text-forty-primary font-bold">View All</button>}
+          className="shadow-sm border-none"
+        >
+          <div className="overflow-x-auto">
+            <table className="w-full text-left">
+              <thead>
+                <tr className="border-b border-gray-50">
+                  <th className="py-3 text-[10px] font-bold text-gray-400 uppercase tracking-wider">Medicine Name</th>
+                  <th className="py-3 text-[10px] font-bold text-gray-400 uppercase tracking-wider">Batch</th>
+                  <th className="py-3 text-[10px] font-bold text-gray-400 uppercase tracking-wider text-right">Qty</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-50">
+                {data.lowStock.length > 0 ? data.lowStock.map((item) => (
+                  <tr key={item.id} className="group hover:bg-gray-50/50 transition-colors">
+                    <td className="py-3 text-sm font-medium text-gray-700">{item.name}</td>
+                    <td className="py-3 text-xs text-gray-400">NZ421</td>
+                    <td className="py-3 text-sm font-bold text-red-500 text-right">{item.quantity}</td>
+                  </tr>
+                )) : (
+                  <tr><td colSpan="3" className="py-4 text-center text-xs text-gray-400">No low stock items</td></tr>
                 )}
+              </tbody>
+            </table>
+          </div>
+        </Card>
+      </div>
+
+      {/* Bottom Grid: Top 5 and Expired */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {/* Top 5 Products */}
+        <Card title="Top 5 Product" className="shadow-sm border-none">
+          <div className="space-y-4">
+            {data.products.slice(0, 5).map((product) => (
+              <div key={product.id} className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg bg-gray-100 flex-shrink-0 overflow-hidden">
+                  <img src="https://via.placeholder.com/40" alt={product.name} className="w-full h-full object-cover" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h4 className="text-sm font-bold text-gray-900 truncate">{product.name}</h4>
+                  <p className="text-[10px] text-gray-400">Batch: NZ421  |  Price: {formatCurrency(product.unitPrice)}</p>
+                </div>
+                <button className="p-1 text-gray-300 hover:text-gray-600"><MoreHorizontal size={16} /></button>
+              </div>
+            ))}
+          </div>
+        </Card>
+
+        {/* Top 5 Customers */}
+        <Card title="Top 5 Customer" className="shadow-sm border-none">
+          <div className="space-y-4">
+            {TOP_CUSTOMERS.map((customer, idx) => (
+              <div key={idx} className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-forty-accent/10 text-forty-accent flex items-center justify-center font-bold text-sm">
+                  {customer.initial}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h4 className="text-sm font-bold text-gray-900 truncate">{customer.name}</h4>
+                  <p className="text-[10px] text-gray-400">{customer.phone}</p>
+                </div>
+                <button className="p-1 text-gray-300 hover:text-gray-600"><MoreHorizontal size={16} /></button>
+              </div>
+            ))}
+          </div>
+        </Card>
+
+        {/* Expired Products */}
+        <Card title="Expired Product" className="shadow-sm border-none">
+          <div className="space-y-4">
+            {data.expired.length > 0 ? data.expired.map((product) => (
+              <div key={product.id} className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg bg-red-50 flex-shrink-0 flex items-center justify-center text-red-500">
+                  <Package size={20} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h4 className="text-sm font-bold text-gray-900 truncate">{product.name}</h4>
+                  <p className="text-[10px] text-red-500 font-medium">Expired: Nov 24, 2024</p>
+                </div>
+                <button className="p-1 text-gray-300 hover:text-gray-600"><MoreHorizontal size={16} /></button>
+              </div>
+            )) : (
+              <div className="text-center py-8">
+                <div className="w-12 h-12 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-2 text-gray-400">
+                  <AlertTriangle size={24} />
+                </div>
+                <p className="text-xs text-gray-400 font-medium">No expired products found</p>
               </div>
             )}
-          </Card>
-        </>
-      )}
-
-      {/* Quick Edit Modals for Admin via Dashboard */}
-      {isAdmin && (
-        <>
-          <ProductModal
-            isOpen={isProductModalOpen}
-            onClose={() => setIsProductModalOpen(false)}
-            product={editProduct}
-            onSuccess={handleModalSuccess}
-          />
-          <OrderModal
-            isOpen={isOrderModalOpen}
-            onClose={() => setIsOrderModalOpen(false)}
-            order={editOrder}
-            onSuccess={handleModalSuccess}
-          />
-        </>
-      )}
+          </div>
+        </Card>
+      </div>
     </PageWrapper>
   )
 }
-
-// Import analyticsApi
-import { analyticsApi } from '../services/api'

@@ -3,133 +3,231 @@ import { NavLink } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { 
   LayoutDashboard, 
-  Package, 
   ShoppingCart, 
+  Truck, 
+  Package, 
+  Users, 
+  UserSquare2, 
+  TrendingUp, 
+  TrendingDown, 
+  Receipt, 
+  Clock, 
   BarChart3, 
-  FileText, 
-  Upload,
+  Settings,
   LogOut,
-  UserCircle,
+  ChevronDown,
   Menu,
   X
 } from 'lucide-react'
 
 const navItems = [
   { to: '/', label: 'Dashboard', icon: LayoutDashboard },
-  { to: '/inventory', label: 'Inventory', icon: Package },
-  { to: '/orders', label: 'Orders', icon: ShoppingCart },
-  { to: '/analytics', label: 'Analytics', icon: BarChart3 },
-  { to: '/transactions', label: 'Transactions', icon: FileText },
-  { to: '/import', label: 'Import', icon: Upload },
-  { to: '/reports', label: 'Reports', icon: FileText, adminOnly: true },
+  { 
+    label: 'Sales', 
+    icon: ShoppingCart,
+    subItems: [
+      { to: '/sales/new', label: 'Sale New' },
+      { to: '/sales', label: 'Sale List' },
+    ]
+  },
+  { 
+    label: 'Purchases', 
+    icon: Truck,
+    subItems: [
+      { to: '/purchases/new', label: 'Purchase New' },
+      { to: '/purchases', label: 'Purchase List' },
+    ]
+  },
+  { 
+    label: 'Stock List', 
+    icon: Receipt,
+    subItems: [
+      { to: '/stock/current', label: 'Current Stock' },
+      { to: '/stock/expired', label: 'Expired Stock' },
+    ]
+  },
+  { 
+    label: 'Products', 
+    icon: Package,
+    subItems: [
+      { to: '/products/new', label: 'Add Product' },
+      { to: '/products', label: 'All Product' },
+      { to: '/products/barcodes', label: 'Print Barcode' },
+    ]
+  },
+  { 
+    label: 'Customer', 
+    icon: Users,
+    subItems: [
+      { to: '/customers/new', label: 'Add Customer' },
+      { to: '/customers', label: 'All Customer' },
+    ]
+  },
+  { 
+    label: 'Supplier', 
+    icon: UserSquare2,
+    subItems: [
+      { to: '/suppliers/new', label: 'Add Supplier' },
+      { to: '/suppliers', label: 'All Supplier' },
+    ]
+  },
+  { to: '/incomes', label: 'Incomes', icon: TrendingUp },
+  { to: '/expenses', label: 'Expenses', icon: TrendingDown },
+  { to: '/tax', label: 'Tax', icon: Receipt },
+  { to: '/due-list', label: 'Due List', icon: Clock },
+  { to: '/reports', label: 'Reports', icon: BarChart3, adminOnly: true },
+  { to: '/settings', label: 'Manage Settings', icon: Settings },
 ]
 
-export default function Sidebar({ alertCount = 0 }) {
+export default function Sidebar({ isOpen, onClose }) {
   const { user, logout } = useAuth()
-  const [isOpen, setIsOpen] = useState(false)
+  const [expandedMenus, setExpandedMenus] = useState({})
 
-  const closeSidebar = () => setIsOpen(false)
+  const toggleMenu = (label) => {
+    setExpandedMenus(prev => ({
+      ...prev,
+      [label]: !prev[label]
+    }))
+  }
 
   return (
     <>
-      {/* Mobile Toggle Button */}
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        className="fixed top-4 left-4 z-50 lg:hidden p-2 rounded-lg bg-teal-600 text-white hover:bg-teal-700 transition-colors"
-        aria-label="Toggle navigation"
-      >
-        {isOpen ? <X size={24} /> : <Menu size={24} />}
-      </button>
-
-      {/* Overlay for mobile */}
+      {/* Mobile Overlay */}
       {isOpen && (
         <div
-          className="fixed inset-0 bg-black bg-opacity-50 z-30 lg:hidden"
-          onClick={closeSidebar}
+          className="fixed inset-0 bg-black/50 z-30 lg:hidden"
+          onClick={onClose}
         />
       )}
 
       {/* Sidebar */}
       <aside
-        className={`fixed left-0 top-0 h-full w-64 bg-gray-900 text-white flex flex-col z-40 transition-transform duration-300 lg:translate-x-0 ${
-          isOpen ? 'translate-x-0' : '-translate-x-full'
-        }`}
+        className={`fixed inset-y-0 left-0 z-40 bg-forty-dark text-white flex flex-col transition-all duration-300 ease-in-out transform overflow-hidden
+          ${isOpen ? 'w-[300px] translate-x-0' : 'w-0 -translate-x-full lg:w-[80px] lg:translate-x-0'}
+          lg:static lg:inset-0
+        `}
       >
-        {/* Logo */}
-        <div className="px-6 py-6 border-b border-gray-800">
-          <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
-            <div className="w-6 h-6 rounded bg-teal-500 flex items-center justify-center pl-0.5">
-              <Package size={14} className="text-white transform -rotate-12" />
+        {/* Inner container - Uses flex col to center content in mini mode */}
+        <div className={`h-full flex flex-col transition-all duration-300 ${!isOpen ? 'lg:items-center' : ''}`}>
+          {/* Logo Section */}
+          <div className="flex items-center justify-between px-6 py-6 h-16 border-b border-white/5">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded bg-forty-primary flex items-center justify-center shrink-0">
+                <Package size={20} className="text-white" />
+              </div>
+              <span className={`text-xl font-bold tracking-tight transition-opacity duration-300 ${!isOpen ? 'lg:opacity-0 lg:hidden' : 'opacity-100'}`}>
+                PharmaOS
+              </span>
             </div>
-            <div>
-              <span className="text-teal-500">Pharma</span>
-              <span className="text-gray-400">OS</span>
-            </div>
-          </h1>
-          <p className="text-xs text-gray-500 mt-1 ml-8">Pharmacy Management</p>
-        </div>
+            
+            {/* Close button - Mobile only */}
+            <button 
+              onClick={onClose}
+              className="lg:hidden p-1 rounded-md hover:bg-white/10 transition-colors text-gray-400"
+            >
+              <X size={24} />
+            </button>
+          </div>
 
         {/* Navigation */}
-        <nav className="flex-1 px-4 py-6 space-y-1 overflow-y-auto">
+        <nav className="flex-1 px-4 py-6 space-y-1 overflow-y-auto custom-scrollbar">
           {navItems
             .filter((item) => !item.adminOnly || user?.role === 'admin')
             .map((item) => {
               const Icon = item.icon
-              const showBadge = item.to === '/inventory' && alertCount > 0
+              const isExpanded = expandedMenus[item.label]
+              
+              if (item.subItems) {
+                return (
+                  <div key={item.label} className="space-y-1 text-center">
+                    <button
+                      onClick={() => isOpen ? toggleMenu(item.label) : null}
+                      title={!isOpen ? item.label : ''}
+                      className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-base font-medium text-gray-300 hover:text-white hover:bg-white/5 transition-all group ${!isOpen ? 'lg:justify-center lg:px-0' : ''}`}
+                    >
+                      <Icon size={20} className="text-gray-400 group-hover:text-forty-primary shrink-0" />
+                      <span className={`flex-1 text-left transition-opacity duration-300 ${!isOpen ? 'lg:opacity-0 lg:hidden' : 'opacity-100'}`}>
+                        {item.label}
+                      </span>
+                      {isOpen && (
+                        <ChevronDown size={16} className={`transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`} />
+                      )}
+                    </button>
+                    {isExpanded && isOpen && (
+                      <div className="space-y-1">
+                        {item.subItems.map(subItem => (
+                          <NavLink
+                            key={subItem.to}
+                            to={subItem.to}
+                            onClick={onClose}
+                            className={({ isActive }) =>
+                              `block pl-2 pr-4 py-3 text-base font-medium transition-colors ${
+                                isActive ? 'text-forty-primary' : 'text-gray-400 hover:text-white'
+                              }`
+                            }
+                          >
+                            {subItem.label}
+                          </NavLink>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )
+              }
 
               return (
                 <NavLink
                   key={item.to}
                   to={item.to}
-                  onClick={closeSidebar}
+                  onClick={onClose}
+                  title={!isOpen ? item.label : ''}
                   className={({ isActive }) =>
-                    `flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
+                    `flex items-center gap-3 px-4 py-3 text-base font-medium transition-all duration-200 ${
                       isActive
-                        ? 'bg-teal-600 text-white'
-                        : 'text-gray-400 hover:text-white hover:bg-gray-800'
-                    }`
+                        ? 'bg-white text-forty-dark rounded-full shadow-lg'
+                        : 'text-gray-300 hover:text-white hover:bg-white/5 rounded-lg'
+                    } ${!isOpen ? 'lg:justify-center lg:px-0' : ''}`
                   }
                 >
-                  <Icon size={20} />
-                  <span className="flex-1">{item.label}</span>
-                  {showBadge && alertCount > 0 && (
-                    <span className="flex items-center justify-center w-5 h-5 bg-red-500 text-white text-xs rounded-full flex-shrink-0">
-                      {alertCount > 9 ? '9+' : alertCount}
-                    </span>
+                  {({ isActive }) => (
+                    <>
+                      <Icon size={20} className={`shrink-0 ${isActive ? 'text-forty-dark' : 'text-gray-400'}`} />
+                      <span className={`flex-1 transition-opacity duration-300 ${!isOpen ? 'lg:opacity-0 lg:hidden' : 'opacity-100'}`}>
+                        {item.label}
+                      </span>
+                    </>
                   )}
                 </NavLink>
               )
             })}
         </nav>
 
-        {/* Footer / User Profile */}
-        <div className="p-4 border-t border-gray-800">
-          {user ? (
-            <div className="bg-gray-800 rounded-xl p-3 flex items-center justify-between mb-2">
-              <div className="flex items-center gap-3 overflow-hidden min-w-0">
-                <div className="w-8 h-8 rounded-full bg-teal-900 text-teal-400 flex items-center justify-center flex-shrink-0">
-                  <UserCircle size={20} />
-                </div>
-                <div className="overflow-hidden min-w-0">
-                  <p className="text-sm font-medium text-white truncate">{user.name}</p>
-                  <p className="text-xs text-gray-400 capitalize">{user.role}</p>
-                </div>
-              </div>
+        {/* User / Sign Out Profile */}
+        <div className="p-4 border-t border-white/5">
+          <div className={`flex items-center gap-3 px-4 py-3 mb-4 ${!isOpen ? 'lg:justify-center lg:px-0' : ''}`}>
+            <div className="w-10 h-10 rounded-full bg-forty-primary/20 text-forty-primary flex items-center justify-center shrink-0">
+              <UserSquare2 size={24} />
             </div>
-          ) : null}
-
+            <div className={`transition-opacity duration-300 ${!isOpen ? 'lg:opacity-0 lg:hidden' : 'opacity-100'}`}>
+              <p className="text-sm font-bold text-white leading-none mb-1">Demo Pharmacy</p>
+              <p className="text-xs text-gray-500">Admin Account</p>
+            </div>
+          </div>
           <button
             onClick={() => {
               logout()
-              closeSidebar()
+              onClose()
             }}
-            className="w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium text-gray-400 hover:text-red-400 hover:bg-gray-800 transition-colors"
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium text-red-400 hover:bg-red-400/10 transition-colors ${!isOpen ? 'lg:justify-center lg:px-0' : ''}`}
           >
-            <LogOut size={18} />
-            <span>Sign Out</span>
+            <LogOut size={20} className="shrink-0" />
+            <span className={`transition-opacity duration-300 ${!isOpen ? 'lg:opacity-0 lg:hidden' : 'opacity-100'}`}>
+              Sign Out
+            </span>
           </button>
         </div>
-      </aside>
+      </div>
+    </aside>
     </>
   )
 }
