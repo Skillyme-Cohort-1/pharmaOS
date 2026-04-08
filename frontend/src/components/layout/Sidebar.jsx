@@ -82,6 +82,9 @@ const navItems = [
 export default function Sidebar({ isOpen, onClose }) {
   const { user, logout } = useAuth()
   const [expandedMenus, setExpandedMenus] = useState({})
+  const [isHovered, setIsHovered] = useState(false)
+
+  const isEffectiveOpen = isOpen || isHovered
 
   const toggleMenu = (label) => {
     setExpandedMenus(prev => ({
@@ -102,20 +105,22 @@ export default function Sidebar({ isOpen, onClose }) {
 
       {/* Sidebar */}
       <aside
-        className={`fixed inset-y-0 left-0 z-40 bg-forty-dark text-white flex flex-col transition-all duration-300 ease-in-out transform overflow-hidden
-          ${isOpen ? 'w-[300px] translate-x-0' : 'w-0 -translate-x-full lg:w-[80px] lg:translate-x-0'}
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+        className={`fixed inset-y-0 left-0 z-40 bg-forty-dark text-white flex flex-col transition-all duration-300 ease-in-out transform overflow-x-hidden overflow-y-auto custom-scrollbar
+          ${isEffectiveOpen ? 'w-[300px] translate-x-0' : 'w-0 -translate-x-full lg:w-[80px] lg:translate-x-0'}
           lg:static lg:inset-0
         `}
       >
         {/* Inner container - Uses flex col to center content in mini mode */}
-        <div className={`h-full flex flex-col transition-all duration-300 ${!isOpen ? 'lg:items-center' : ''}`}>
+        <div className={`h-full flex flex-col transition-all duration-300 ${!isEffectiveOpen ? 'lg:items-center' : ''}`}>
           {/* Logo Section */}
-          <div className="flex items-center justify-between px-6 py-6 h-16 border-b border-white/5">
+          <div className="flex items-center justify-between px-6 py-6 h-16 border-b border-white/5 transition-all duration-300">
             <div className="flex items-center gap-3">
               <div className="w-8 h-8 rounded bg-forty-primary flex items-center justify-center shrink-0">
                 <Package size={20} className="text-white" />
               </div>
-              <span className={`text-xl font-bold tracking-tight transition-opacity duration-300 ${!isOpen ? 'lg:opacity-0 lg:hidden' : 'opacity-100'}`}>
+              <span className={`text-xl font-bold tracking-tight transition-all duration-300 overflow-hidden whitespace-nowrap ${!isEffectiveOpen ? 'lg:w-0 lg:opacity-0' : 'w-auto opacity-100 ml-3'}`}>
                 PharmaOS
               </span>
             </div>
@@ -139,21 +144,21 @@ export default function Sidebar({ isOpen, onClose }) {
               
               if (item.subItems) {
                 return (
-                  <div key={item.label} className="space-y-1 text-center">
+                  <div key={item.label} className="space-y-1 text-center w-full">
                     <button
-                      onClick={() => isOpen ? toggleMenu(item.label) : null}
-                      title={!isOpen ? item.label : ''}
-                      className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-base font-medium text-gray-300 hover:text-white hover:bg-white/5 transition-all group ${!isOpen ? 'lg:justify-center lg:px-0' : ''}`}
+                      onClick={() => isEffectiveOpen ? toggleMenu(item.label) : null}
+                      title={!isEffectiveOpen ? item.label : ''}
+                      className={`w-full flex items-center px-4 py-3 rounded-lg text-base font-medium text-gray-300 hover:text-white hover:bg-white/5 transition-all group ${!isEffectiveOpen ? 'lg:justify-center' : 'justify-start'}`}
                     >
                       <Icon size={20} className="text-gray-400 group-hover:text-forty-primary shrink-0" />
-                      <span className={`flex-1 text-left transition-opacity duration-300 ${!isOpen ? 'lg:opacity-0 lg:hidden' : 'opacity-100'}`}>
+                      <span className={`text-left transition-all duration-300 overflow-hidden whitespace-nowrap ${!isEffectiveOpen ? 'lg:w-0 lg:opacity-0' : 'w-auto flex-1 opacity-100 ml-3'}`}>
                         {item.label}
                       </span>
-                      {isOpen && (
+                      {isEffectiveOpen && (
                         <ChevronDown size={16} className={`transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`} />
                       )}
                     </button>
-                    {isExpanded && isOpen && (
+                    {isExpanded && isEffectiveOpen && (
                       <div className="space-y-1">
                         {item.subItems.map(subItem => (
                           <NavLink
@@ -180,19 +185,19 @@ export default function Sidebar({ isOpen, onClose }) {
                   key={item.to}
                   to={item.to}
                   onClick={onClose}
-                  title={!isOpen ? item.label : ''}
+                  title={!isEffectiveOpen ? item.label : ''}
                   className={({ isActive }) =>
-                    `flex items-center gap-3 px-4 py-3 text-base font-medium transition-all duration-200 ${
+                    `flex items-center px-4 py-3 text-base font-medium transition-all duration-300 w-full ${
                       isActive
                         ? 'bg-white text-forty-dark rounded-full shadow-lg'
                         : 'text-gray-300 hover:text-white hover:bg-white/5 rounded-lg'
-                    } ${!isOpen ? 'lg:justify-center lg:px-0' : ''}`
+                    } ${!isEffectiveOpen ? 'lg:justify-center' : 'justify-start'}`
                   }
                 >
                   {({ isActive }) => (
                     <>
                       <Icon size={20} className={`shrink-0 ${isActive ? 'text-forty-dark' : 'text-gray-400'}`} />
-                      <span className={`flex-1 transition-opacity duration-300 ${!isOpen ? 'lg:opacity-0 lg:hidden' : 'opacity-100'}`}>
+                      <span className={`transition-all duration-300 overflow-hidden whitespace-nowrap text-left ${!isEffectiveOpen ? 'lg:w-0 lg:opacity-0' : 'w-auto flex-1 opacity-100 ml-3'}`}>
                         {item.label}
                       </span>
                     </>
@@ -203,12 +208,12 @@ export default function Sidebar({ isOpen, onClose }) {
         </nav>
 
         {/* User / Sign Out Profile */}
-        <div className="p-4 border-t border-white/5">
-          <div className={`flex items-center gap-3 px-4 py-3 mb-4 ${!isOpen ? 'lg:justify-center lg:px-0' : ''}`}>
+        <div className="p-4 border-t border-white/5 w-full">
+          <div className={`flex items-center px-4 py-3 mb-4 transition-all duration-300 ${!isEffectiveOpen ? 'lg:justify-center' : 'justify-start'}`}>
             <div className="w-10 h-10 rounded-full bg-forty-primary/20 text-forty-primary flex items-center justify-center shrink-0">
               <UserSquare2 size={24} />
             </div>
-            <div className={`transition-opacity duration-300 ${!isOpen ? 'lg:opacity-0 lg:hidden' : 'opacity-100'}`}>
+            <div className={`transition-all duration-300 overflow-hidden whitespace-nowrap text-left ${!isEffectiveOpen ? 'lg:w-0 lg:opacity-0' : 'w-auto opacity-100 ml-3'}`}>
               <p className="text-sm font-bold text-white leading-none mb-1">Demo Pharmacy</p>
               <p className="text-xs text-gray-500">Admin Account</p>
             </div>
@@ -218,10 +223,10 @@ export default function Sidebar({ isOpen, onClose }) {
               logout()
               onClose()
             }}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium text-red-400 hover:bg-red-400/10 transition-colors ${!isOpen ? 'lg:justify-center lg:px-0' : ''}`}
+            className={`flex items-center px-4 py-3 rounded-lg text-sm font-medium text-red-400 hover:bg-red-400/10 transition-all duration-300 w-full ${!isEffectiveOpen ? 'lg:justify-center' : 'justify-start'}`}
           >
             <LogOut size={20} className="shrink-0" />
-            <span className={`transition-opacity duration-300 ${!isOpen ? 'lg:opacity-0 lg:hidden' : 'opacity-100'}`}>
+            <span className={`transition-all duration-300 overflow-hidden whitespace-nowrap text-left ${!isEffectiveOpen ? 'lg:w-0 lg:opacity-0' : 'w-auto opacity-100 ml-3'}`}>
               Sign Out
             </span>
           </button>

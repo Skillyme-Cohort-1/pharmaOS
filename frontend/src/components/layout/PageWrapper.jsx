@@ -4,8 +4,8 @@ import Navbar from './Navbar'
 import { useState } from 'react'
 
 export default function PageWrapper({ title, action, children }) {
-  // Desktop is open by default
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true)
+  // Desktop is closed by default to provide more workspace
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false)
 
   const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen)
 

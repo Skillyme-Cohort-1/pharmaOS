@@ -10,6 +10,7 @@ import SalesList from './pages/Sales/SalesList'
 import Customers from './pages/Customers'
 import Suppliers from './pages/Suppliers'
 import Purchases from './pages/Purchases'
+import PurchaseNew from './pages/PurchaseNew'
 import Expenses from './pages/Expenses'
 import Incomes from './pages/Incomes'
 import DueList from './pages/DueList'
@@ -46,7 +47,7 @@ function App() {
             <Route path="/sales" element={<ProtectedRoute><SalesList /></ProtectedRoute>} />
 
             {/* Purchases */}
-            <Route path="/purchases/new" element={<ProtectedRoute><Navigate to="/purchases" replace /></ProtectedRoute>} />
+            <Route path="/purchases/new" element={<ProtectedRoute><PurchaseNew /></ProtectedRoute>} />
             <Route path="/purchases" element={<ProtectedRoute><Purchases /></ProtectedRoute>} />
 
             {/* Products */}

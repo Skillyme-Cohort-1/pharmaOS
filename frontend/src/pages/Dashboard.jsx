@@ -41,6 +41,8 @@ export default function Dashboard() {
     revenue: {},
     purchaseTrend: [],
     dashboardKPIs: null,
+    reportData: [],
+    salesPurchaseData: [],
   })
   const [loading, setLoading] = useState(true)
   const { customers: topCustomers } = useTopCustomers()
