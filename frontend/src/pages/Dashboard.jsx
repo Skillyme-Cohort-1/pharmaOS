@@ -101,6 +101,9 @@ export default function Dashboard() {
   }
 
   const kpis = data.dashboardKPIs || {}
+  const reportData = data.reportData || []
+  const salesPurchaseData = data.salesPurchaseData || []
+  const profitLoss = data.profitLoss || []
 
   return (
     <PageWrapper>
@@ -146,7 +149,7 @@ export default function Dashboard() {
         <Card title="Monthly Profit / Loss" className="lg:col-span-2 shadow-sm border-none">
           <div className="h-[300px]">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={data.profitLoss}>
+              <BarChart data={profitLoss}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
                 <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{fill: '#9ca3af', fontSize: 12}} />
                 <YAxis axisLine={false} tickLine={false} tick={{fill: '#9ca3af', fontSize: 12}} />
@@ -161,11 +164,11 @@ export default function Dashboard() {
         {/* Overall Report Donut Chart */}
         <Card title="Revenue Breakdown" className="shadow-sm border-none">
           <div className="h-[240px] relative">
-            {data.reportData.length > 0 ? (
+            {reportData.length > 0 ? (
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
-                    data={data.reportData}
+                    data={reportData}
                     cx="50%"
                     cy="50%"
                     innerRadius={60}
@@ -173,7 +176,7 @@ export default function Dashboard() {
                     paddingAngle={5}
                     dataKey="value"
                   >
-                    {data.reportData.map((entry, index) => (
+                    {reportData.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={entry.color} />
                     ))}
                   </Pie>
@@ -190,7 +193,7 @@ export default function Dashboard() {
           </div>
           {/* Legend */}
           <div className="grid grid-cols-2 gap-4 mt-4">
-            {data.reportData.map((item) => (
+            {reportData.map((item) => (
               <div key={item.name} className="flex items-center gap-2">
                 <div className="w-2 h-2 rounded-full" style={{ backgroundColor: item.color }} />
                 <span className="text-xs text-gray-500 font-medium">{item.name}</span>
@@ -205,9 +208,9 @@ export default function Dashboard() {
         {/* Sales & Purchase Trends */}
         <Card title="Sales & Purchase" className="lg:col-span-2 shadow-sm border-none">
           <div className="h-[300px]">
-            {data.salesPurchaseData.length > 0 ? (
+            {salesPurchaseData.length > 0 ? (
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={data.salesPurchaseData}>
+                <LineChart data={salesPurchaseData}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
                   <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{fill: '#9ca3af', fontSize: 12}} />
                   <YAxis axisLine={false} tickLine={false} tick={{fill: '#9ca3af', fontSize: 12}} />
