@@ -67,6 +67,158 @@ export async function getSalesTrend(req, res, next) {
 }
 
 /**
+ * Get dashboard KPI summary
+ */
+export async function getDashboard(req, res, next) {
+  try {
+    const now = new Date()
+    const todayStart = new Date(now)
+    todayStart.setHours(0, 0, 0, 0)
+
+    const [
+      totalCustomers,
+      totalSuppliers,
+      products,
+      todaySales,
+      todayPurchases,
+      todayExpenses,
+    ] = await Promise.all([
+      prisma.customer.count(),
+      prisma.supplier.count(),
+      prisma.product.findMany({
+        select: {
+          quantity: true,
+          status: true,
+          unitPrice: true,
+          purchasePrice: true,
+        }
+      }),
+      prisma.transaction.aggregate({
+        where: { type: 'sale', createdAt: { gte: todayStart } },
+        _sum: { amount: true },
+      }),
+      prisma.purchase.aggregate({
+        where: { purchaseDate: { gte: todayStart } },
+        _sum: { totalAmount: true },
+      }),
+      prisma.expense.aggregate({
+        where: { date: { gte: todayStart } },
+        _sum: { amount: true },
+      }),
+    ])
+
+    const stockMedicine = products.reduce((sum, p) => sum + p.quantity, 0)
+    const expiredCount = products.filter(p => p.status === 'expired').length
+    const stockValue = products.reduce((sum, p) => sum + Number(p.unitPrice) * p.quantity, 0)
+
+    sendSuccess(res, 200, {
+      totalCustomers,
+      totalSuppliers,
+      stockMedicine,
+      stockValue,
+      expiredCount,
+      todaySales: Number(todaySales._sum.amount) || 0,
+      todayPurchases: Number(todayPurchases._sum.totalAmount) || 0,
+      todayExpenses: Number(todayExpenses._sum.amount) || 0,
+    })
+  } catch (error) {
+    next(error)
+  }
+}
+
+/**
+ * Get monthly profit/loss data
+ */
+export async function getProfitLoss(req, res, next) {
+  try {
+    const { months = 6 } = req.query
+    const now = new Date()
+
+    const monthLabels = []
+    const profitLossData = []
+
+    for (let i = parseInt(months) - 1; i >= 0; i--) {
+      const monthStart = new Date(now.getFullYear(), now.getMonth() - i, 1)
+      const monthEnd = new Date(now.getFullYear(), now.getMonth() - i + 1, 0, 23, 59, 59)
+
+      const [salesResult, purchasesResult, expensesResult] = await Promise.all([
+        prisma.transaction.aggregate({
+          where: { type: 'sale', createdAt: { gte: monthStart, lte: monthEnd } },
+          _sum: { amount: true },
+        }),
+        prisma.purchase.aggregate({
+          where: { purchaseDate: { gte: monthStart, lte: monthEnd } },
+          _sum: { totalAmount: true },
+        }),
+        prisma.expense.aggregate({
+          where: { date: { gte: monthStart, lte: monthEnd } },
+          _sum: { amount: true },
+        }),
+      ])
+
+      const revenue = Number(salesResult._sum.amount) || 0
+      const purchases = Number(purchasesResult._sum.totalAmount) || 0
+      const expenses = Number(expensesResult._sum.amount) || 0
+      const cost = purchases + expenses
+      const profit = revenue - cost
+
+      const label = monthStart.toLocaleDateString('en-KE', { month: 'short' })
+      monthLabels.push(label)
+      profitLossData.push({
+        month: label,
+        revenue,
+        cost,
+        profit,
+      })
+    }
+
+    sendSuccess(res, 200, profitLossData)
+  } catch (error) {
+    next(error)
+  }
+}
+
+/**
+ * Get revenue breakdown (sales vs income vs expenses)
+ */
+export async function getRevenue(req, res, next) {
+  try {
+    const { period = 30 } = req.query
+    const now = new Date()
+    const startDate = new Date(now)
+    startDate.setDate(now.getDate() - parseInt(period))
+
+    const [salesResult, incomeResult, expenseResult] = await Promise.all([
+      prisma.transaction.aggregate({
+        where: { type: 'sale', createdAt: { gte: startDate } },
+        _sum: { amount: true },
+      }),
+      prisma.income.aggregate({
+        where: { date: { gte: startDate } },
+        _sum: { amount: true },
+      }),
+      prisma.expense.aggregate({
+        where: { date: { gte: startDate } },
+        _sum: { amount: true },
+      }),
+    ])
+
+    const sales = Number(salesResult._sum.amount) || 0
+    const income = Number(incomeResult._sum.amount) || 0
+    const expenses = Number(expenseResult._sum.amount) || 0
+
+    sendSuccess(res, 200, {
+      sales,
+      income,
+      expenses,
+      net: sales + income - expenses,
+    })
+  } catch (error) {
+    next(error)
+  }
+}
+
+/**
  * Get top products by units or revenue
  */
 export async function getTopProducts(req, res, next) {

@@ -17,6 +17,12 @@ import analyticsRouter from './routes/analytics.js'
 import importRouter from './routes/import.js'
 import promptRouter from './routes/prompt.js'
 import reportsRouter from './routes/reports.js'
+import customersRouter from './routes/customers.js'
+import suppliersRouter from './routes/suppliers.js'
+import purchasesRouter from './routes/purchases.js'
+import expensesRouter from './routes/expenses.js'
+import incomesRouter from './routes/incomes.js'
+import settingsRouter from './routes/settings.js'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -59,6 +65,12 @@ app.use('/api/analytics', analyticsRouter)
 app.use('/api/import', importRouter)
 app.use('/api/prompt', promptRouter)
 app.use('/api/reports', reportsRouter)
+app.use('/api/customers', customersRouter)
+app.use('/api/suppliers', suppliersRouter)
+app.use('/api/purchases', purchasesRouter)
+app.use('/api/expenses', expensesRouter)
+app.use('/api/incomes', incomesRouter)
+app.use('/api/settings', settingsRouter)
 
 // SPA Fallback: Serve index.html for any non-API routes
 app.get('*', (req, res) => {
