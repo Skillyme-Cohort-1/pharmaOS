@@ -102,7 +102,7 @@ export default function Reports() {
             </h3>
             <span className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Live Update</span>
           </div>
-          <div className="p-8 space-y-8">
+          <div className="p-8 space-y-6">
             <div className="flex justify-around text-center">
               <div>
                 <p className="text-xs font-bold text-slate-400 uppercase">Gross Profit</p>
@@ -131,7 +131,7 @@ export default function Reports() {
           <div className="p-5 border-b border-slate-100 bg-slate-50/50">
             <h3 className="font-bold text-slate-800">Generated Reports</h3>
           </div>
-          <div className="p-4 flex-1 space-y-3">
+          <div className="p-4 flex-1 space-y-15 overflow-y-auto">
             {recentReports.map((file, index) => (
               <div key={index} className="group p-3 rounded-xl border border-transparent hover:border-slate-200 hover:bg-slate-50 transition-all flex items-center justify-between">
                 <div className="flex items-center gap-3">

@@ -19,17 +19,8 @@ export default function Navbar({ setToggled }) {
   return (
     <div className="bg-white border-b border-slate-200 shadow-sm px-4 md:px-8 py-3 md:py-4 flex items-center justify-between sticky top-0 z-40">
       
-      {/* Left side - Mobile Menu & Search */}
+      {/* Left side - Search */}
       <div className="flex items-center gap-3 flex-1">
-        
-        {/* Hamburger Menu (Only visible on mobile) */}
-        <button 
-          onClick={() => setToggled(true)} 
-          className="md:hidden text-slate-500 hover:text-teal-600 hover:bg-slate-100 p-2 rounded-xl transition-colors"
-        >
-          <MenuIcon size={24} />
-        </button>
-
         {/* Search - Hidden on very small screens, visible on tablets and up */}
         <div className="flex-1 max-w-md hidden sm:block">
           <div className="relative group">
@@ -45,9 +36,10 @@ export default function Navbar({ setToggled }) {
         </div>
       </div>
 
-      {/* Right side - Profile & Notifications */}
+      {/* Right side - Profile, Notifications & Mobile Menu */}
       <div className="flex items-center gap-4 md:gap-8 ml-4">
         
+        {/* Notifications */}
         <div className="relative cursor-pointer group">
           <div className="w-10 h-10 flex items-center justify-center text-slate-500 hover:text-teal-600 hover:bg-slate-50 rounded-full transition-colors">
             <Bell size={20} />
@@ -57,6 +49,7 @@ export default function Navbar({ setToggled }) {
           </span>
         </div>
 
+        {/* Profile Dropdown */}
         <div className="relative flex items-center gap-3" ref={dropdownRef}>
           <div className="w-10 h-10 rounded-full bg-gradient-to-br from-teal-400 to-teal-600 p-[2px] shadow-sm cursor-pointer" onClick={() => setIsDropdownOpen(!isDropdownOpen)}>
             <div className="w-full h-full bg-white rounded-full overflow-hidden border-2 border-white flex items-center justify-center text-slate-500">
@@ -95,6 +88,15 @@ export default function Navbar({ setToggled }) {
             </div>
           )}
         </div>
+
+        {/* Hamburger Menu (Moved to the right side, only visible on mobile) */}
+        <button 
+          onClick={() => setToggled(true)} 
+          className="md:hidden text-slate-500 hover:text-teal-600 hover:bg-slate-100 p-2 rounded-xl transition-all duration-500 ease-out hover:scale-110 ml-2"
+        >
+          <MenuIcon size={24} />
+        </button>
+
       </div>
     </div>
   );

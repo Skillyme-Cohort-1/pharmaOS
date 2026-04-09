@@ -12,17 +12,17 @@ import Inventory from "./pages/Inventory";
 import Suppliers from "./pages/Suppliers";
 import Reports from "./pages/Reports";
 import Finance from "./pages/Finance";
-import Products from "./pages/Products"; // Don't forget this one!
-import AddProduct from "./components/modals/AddProduct"; // Import the AddProduct component
+import Products from "./pages/Products"; 
 import Stock from "./pages/Stock";
 import Staff from "./pages/Staff";
+
+// Modal Imports
+import AddProduct from "./components/modals/AddProduct";
 
 export default function App() {
   return (
     <Routes>
-      {/* Wrap all authenticated routes in the Layout. 
-        Note: I've changed the "/" path to show the Dashboard directly.
-      */}
+      {/* Default Route */}
       <Route path="/" element={<Layout><Dashboard /></Layout>} />
       
       {/* Main Navigation Routes */}
@@ -33,15 +33,28 @@ export default function App() {
       <Route path="/purchases" element={<Layout><Purchases /></Layout>} />
       <Route path="/customers" element={<Layout><Customers /></Layout>} />
       <Route path="/suppliers" element={<Layout><Suppliers /></Layout>} />
-      <Route path="/finance" element={<Layout><Finance /></Layout>} />
       <Route path="/reports" element={<Layout><Reports /></Layout>} />
       <Route path="/stock" element={<Layout><Stock /></Layout>} />
       <Route path="/staff" element={<Layout><Staff /></Layout>} />
-      <Route path="/addproducts" element={<Layout><AddProduct onAddProduct={() => { /* You can implement this function to refresh the product list after adding a new product */ }} /></Layout>} />
+      {/* Update App.jsx to this if you want to keep the SubMenu */}
+      <Route path="/finance" element={<Layout><Finance /></Layout>} />
+      <Route path="/finance/incomes" element={<Layout><Finance /></Layout>} />
+      <Route path="/finance/expenses" element={<Layout><Finance /></Layout>} />
+      <Route path="/finance/tax" element={<Layout><Finance /></Layout>} />
       
-       {/* Add Product Route */}
-      <Route path="/products/add" element={<Layout><AddProduct onAddProduct={() => { /* You can implement this function to refresh the product list after adding a new product */ }} /></Layout>} />
-      
+      {/* Modal / Action Routes */}
+      {/* Force isOpen to true since it's its own route, and use history.back() for the close button */}
+      <Route 
+        path="/products/add" 
+        element={
+          <Layout>
+            <AddProduct 
+              isOpen={true} 
+              onClose={() => window.history.back()} 
+            />
+          </Layout>
+        } 
+      />
       
       {/* Account Routes */}
       <Route path="/profile" element={<Layout><Profile /></Layout>} />

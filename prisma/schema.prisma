@@ -1,0 +1,44 @@
+// --- Configuration ---
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// --- PharmaOS Authentication Models ---
+enum UserType {
+  SUPER_ADMIN
+  MANAGER
+  DISPATCH
+  ADMIN
+  FINANCE
+  RECEIVING_BAY
+  RIDER
+  PHARMACIST
+}
+
+model User {
+  id         String   @id @default(uuid()) @db.Uuid
+  email      String   @unique
+  password   String
+  userType   UserType
+  is_active  Boolean  @default(true)
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  pharmacist Pharmacist? 
+}
+
+model Pharmacist {
+  id             String   @id @default(uuid()) @db.Uuid
+  user_id        String   @unique @db.Uuid
+  license_number String   @unique
+  is_active      Boolean  @default(true)
+  created_at     DateTime @default(now())
+  updated_at     DateTime @updatedAt
+
+  user           User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+}

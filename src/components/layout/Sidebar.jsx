@@ -55,29 +55,26 @@ export default function PharmacySidebar({ toggled, setToggled }) {
           }),
         }}
       >
-        <MenuItem active={isActive('/dashboard')} icon={<LayoutDashboard size={20} />} component={<Link to="/dashboard" onClick={() => setToggled(false)} />}> Dashboard </MenuItem>
-        <MenuItem active={isActive('/sales')} icon={<DollarSign size={20} />} component={<Link to="/sales" onClick={() => setToggled(false)} />}> Sales </MenuItem>
-        <MenuItem active={isActive('/purchases')} icon={<ShoppingCart size={20} />} component={<Link to="/purchases" onClick={() => setToggled(false)} />}> Purchases </MenuItem>
-        <MenuItem active={isActive('/products')} icon={<Package size={20} />} component={<Link to="/products" onClick={() => setToggled(false)} />}> Products </MenuItem>
-        <MenuItem active={isActive('/stock')} icon={<Package size={20} />} component={<Link to="/stock" onClick={() => setToggled(false)} />}> Stock </MenuItem>
-        <MenuItem active={isActive('/customers')} icon={<Users size={20} />} component={<Link to="/customers" onClick={() => setToggled(false)} />}> Customers </MenuItem>
-        <MenuItem active={isActive('/suppliers')} icon={<Truck size={20} />} component={<Link to="/suppliers" onClick={() => setToggled(false)} />}> Suppliers </MenuItem>
-        <MenuItem active={isActive('/staff')} icon={<User size={20} />} component={<Link to="/staff" onClick={() => setToggled(false)} />}> Staff </MenuItem>
-        <MenuItem active={isActive('/reports')} icon={<LayoutDashboard size={20} />} component={<Link to="/reports" onClick={() => setToggled(false)} />}> Reports </MenuItem>
+        <MenuItem active={isActive('/dashboard')} icon={<LayoutDashboard size={16} />} component={<Link to="/dashboard" onClick={() => setToggled(false)} />}> Dashboard </MenuItem>
+        <MenuItem active={isActive('/sales')} icon={<DollarSign size={16} />} component={<Link to="/sales" onClick={() => setToggled(false)} />}> Sales </MenuItem>
+        <MenuItem active={isActive('/purchases')} icon={<ShoppingCart size={16} />} component={<Link to="/purchases" onClick={() => setToggled(false)} />}> Purchases </MenuItem>
+        <MenuItem active={isActive('/products')} icon={<Package size={16} />} component={<Link to="/products" onClick={() => setToggled(false)} />}> Products </MenuItem>
+        <MenuItem active={isActive('/stock')} icon={<Package size={16} />} component={<Link to="/stock" onClick={() => setToggled(false)} />}> Stock </MenuItem>
+        <MenuItem active={isActive('/customers')} icon={<Users size={16} />} component={<Link to="/customers" onClick={() => setToggled(false)} />}> Customers </MenuItem>
+        <MenuItem active={isActive('/suppliers')} icon={<Truck size={16} />} component={<Link to="/suppliers" onClick={() => setToggled(false)} />}> Suppliers </MenuItem>
+        <MenuItem active={isActive('/staff')} icon={<User size={16} />} component={<Link to="/staff" onClick={() => setToggled(false)} />}> Staff </MenuItem>
+        <MenuItem active={isActive('/reports')} icon={<LayoutDashboard size={16} />} component={<Link to="/reports" onClick={() => setToggled(false)} />}> Reports </MenuItem>
 
-        {/* Finance Dropdown (SubMenu) */}
-        <SubMenu 
-          label="Finance" 
-          icon={<Wallet size={20} />}
-          defaultOpen={location.pathname.includes('/finance')} 
-        >
-          <MenuItem active={isActive('/finance/incomes')} icon={<TrendingUp size={20} />} component={<Link to="/finance/incomes" onClick={() => setToggled(false)} />}> Incomes </MenuItem>
-          <MenuItem active={isActive('/finance/expenses')} icon={<TrendingDown size={20} />} component={<Link to="/finance/expenses" onClick={() => setToggled(false)} />}> Expenses </MenuItem>
-          <MenuItem active={isActive('/finance/tax')} icon={<Landmark size={20} />} component={<Link to="/finance/tax" onClick={() => setToggled(false)} />}> Tax </MenuItem>
-        </SubMenu>
-
-      </Menu>
-
+        {/* Finance Link (Removed the stray 'x' here) */}
+        <MenuItem 
+          active={isActive('/finance')} 
+          icon={<Wallet size={16} />} 
+          component={<Link to="/finance" onClick={() => setToggled(false)} />}
+        > 
+          Finance 
+        </MenuItem>
+      </Menu> {/* <-- Added the missing closing Menu tag here */}
+        
       {/* Bottom Profile Section (Hidden on mobile as it's in Navbar) */}
       <div className="mt-auto p-5 border-t border-[#164e4f] bg-black/10 hidden md:block">
         <div className="flex items-center gap-3">
@@ -89,7 +86,7 @@ export default function PharmacySidebar({ toggled, setToggled }) {
             <p className="m-0 text-teal-400/80 text-xs font-medium truncate">View Profile</p>
           </div>
           <Link to="/settings" className="text-teal-400/60 hover:text-teal-400 transition-colors p-2 rounded-lg hover:bg-white/5">
-            <Settings size={20} />
+            <Settings size={16} />
           </Link>
         </div>
       </div>
