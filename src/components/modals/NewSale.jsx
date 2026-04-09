@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 
 // Mock product data
 const AVAILABLE_PRODUCTS = [
@@ -14,6 +14,7 @@ export default function NewSale() {
   const [cart, setCart] = useState([]);
   const [customerName, setCustomerName] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('Credit Card');
+  const invoiceSequenceRef = useRef(100000);
   
   // State to hold the generated invoice data for the receipt modal
   const [completedInvoice, setCompletedInvoice] = useState(null);
@@ -59,8 +60,8 @@ export default function NewSale() {
     const formattedDate = now.toLocaleDateString();
     const formattedTime = now.toLocaleTimeString();
 
-    // Generate a random invoice number
-    const invoiceNumber = `INV-${Math.floor(100000 + Math.random() * 900000)}`;
+    invoiceSequenceRef.current += 1;
+    const invoiceNumber = `INV-${invoiceSequenceRef.current}`;
 
     // Build the complete invoice payload
     const invoicePayload = {

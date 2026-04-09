@@ -3,7 +3,7 @@ import { ArrowUpRight, ArrowDownLeft, Package, AlertTriangle, History, RefreshCw
 
 export default function Stock() {
   // Mock data for stock levels
-  const [stockItems, setStockItems] = useState([
+  const [stockItems] = useState([
     { id: "STK-01", name: "Amoxicillin 500mg", currentStock: 145, minThreshold: 50, unit: "Boxes", lastRestocked: "2026-03-15" },
     { id: "STK-02", name: "Paracetamol 500mg", currentStock: 8, minThreshold: 100, unit: "Blisters", lastRestocked: "2026-01-10" },
     { id: "STK-03", name: "Vitamin C Zinc", currentStock: 0, minThreshold: 30, unit: "Bottles", lastRestocked: "2025-12-20" },

@@ -14,7 +14,7 @@ import AddProduct from "../components/modals/AddProduct";
 
 export default function Products() {
   // 1. Initial State
-  const [products, setProducts] = useState([
+  const [products] = useState([
     { id: "PRD-001", name: "Amoxicillin 500mg", category: "Antibiotics", price: "KSh 850", stock: 145, expiryDate: "2026-10-12" },
     { id: "PRD-002", name: "Paracetamol 500mg", category: "Painkillers", price: "KSh 150", stock: 9, expiryDate: "2026-08-20" },
     { id: "PRD-003", name: "Vitamin C Zinc", category: "Supplements", price: "KSh 1,200", stock: 0, expiryDate: "2026-12-01" },

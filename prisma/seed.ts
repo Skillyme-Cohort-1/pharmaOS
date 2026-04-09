@@ -42,52 +42,44 @@ async function main() {
   // --- TASK 3: SEED PHARMACISTS TABLE ---
   console.log('Creating pharmacists and linking profiles...');
 
-  // We use create instead of createMany here so we can easily link the Pharmacist profile
-  
-  // Pharmacist 1 (Active)
-  await prisma.user.create({
-    data: {
-      email: 'pharmacist.active@pharmaos.com',
-      password: defaultPassword,
-      userType: UserType.PHARMACIST,
-      pharmacist: {
-        create: {
-          license_number: 'PHARM-ACTIVE-001',
-          is_active: true,
-        }
-      }
-    }
-  });
+  const pharmacistSeeds = [
+    { email: 'pharmacist.active@pharmaos.com', licenseNumber: 'PHARM-ACTIVE-001', isActive: true },
+    { email: 'pharmacist.inactive1@pharmaos.com', licenseNumber: 'PHARM-INACT-002', isActive: false },
+    { email: 'pharmacist.inactive2@pharmaos.com', licenseNumber: 'PHARM-INACT-003', isActive: false },
+  ];
 
-  // Pharmacist 2 (Inactive)
-  await prisma.user.create({
-    data: {
-      email: 'pharmacist.inactive1@pharmaos.com',
-      password: defaultPassword,
-      userType: UserType.PHARMACIST,
-      pharmacist: {
-        create: {
-          license_number: 'PHARM-INACT-002',
-          is_active: false,
-        }
-      }
-    }
-  });
-
-  // Pharmacist 3 (Inactive)
-  await prisma.user.create({
-    data: {
-      email: 'pharmacist.inactive2@pharmaos.com',
-      password: defaultPassword,
-      userType: UserType.PHARMACIST,
-      pharmacist: {
-        create: {
-          license_number: 'PHARM-INACT-003',
-          is_active: false,
-        }
-      }
-    }
-  });
+  for (const pharmacist of pharmacistSeeds) {
+    await prisma.user.upsert({
+      where: { email: pharmacist.email },
+      update: {
+        password: defaultPassword,
+        userType: UserType.PHARMACIST,
+        pharmacist: {
+          upsert: {
+            update: {
+              license_number: pharmacist.licenseNumber,
+              is_active: pharmacist.isActive,
+            },
+            create: {
+              license_number: pharmacist.licenseNumber,
+              is_active: pharmacist.isActive,
+            },
+          },
+        },
+      },
+      create: {
+        email: pharmacist.email,
+        password: defaultPassword,
+        userType: UserType.PHARMACIST,
+        pharmacist: {
+          create: {
+            license_number: pharmacist.licenseNumber,
+            is_active: pharmacist.isActive,
+          },
+        },
+      },
+    });
+  }
 
   console.log('✅ Seeding complete!');
 }
