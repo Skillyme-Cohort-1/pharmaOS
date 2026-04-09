@@ -2,11 +2,13 @@ import { useState, useCallback } from 'react'
 import { Plus, Search, Edit2, Trash2 } from 'lucide-react'
 import { useSuppliers } from '../hooks/useSuppliers'
 import { suppliersApi } from '../services/api'
+import { useToast } from '../context/ToastContext'
 import PageWrapper from '../components/layout/PageWrapper'
 import Card from '../components/ui/Card'
 
 export default function Suppliers() {
   const { suppliers, loading, error, refetch } = useSuppliers()
+  const toast = useToast()
   const [searchQuery, setSearchQuery] = useState('')
   const [showForm, setShowForm] = useState(false)
   const [formData, setFormData] = useState({ name: '', phone: '', contactPerson: '', email: '', address: '' })
@@ -15,33 +17,40 @@ export default function Suppliers() {
 
   const handleSubmit = useCallback(async (e) => {
     e.preventDefault()
+    if (!formData.name.trim()) {
+      toast.error('Supplier name is required')
+      return
+    }
     setSaving(true)
     try {
       if (editId) {
         await suppliersApi.update(editId, formData)
+        toast.success('Supplier updated successfully')
       } else {
         await suppliersApi.create(formData)
+        toast.success('Supplier created successfully')
       }
       setFormData({ name: '', phone: '', contactPerson: '', email: '', address: '' })
       setShowForm(false)
       setEditId(null)
       refetch()
     } catch (err) {
-      console.error(err)
+      toast.error(err.message || 'Failed to save supplier')
     } finally {
       setSaving(false)
     }
-  }, [formData, editId, refetch])
+  }, [formData, editId, refetch, toast])
 
   const handleDelete = useCallback(async (id) => {
     if (!confirm('Delete this supplier?')) return
     try {
       await suppliersApi.remove(id)
+      toast.success('Supplier deleted successfully')
       refetch()
     } catch (err) {
-      alert(err.message)
+      toast.error(err.message || 'Failed to delete supplier')
     }
-  }, [refetch])
+  }, [refetch, toast])
 
   const filtered = suppliers.filter(s =>
     !searchQuery ||

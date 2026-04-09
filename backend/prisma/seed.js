@@ -29,6 +29,7 @@ async function main() {
   await prisma.expense.deleteMany()
   await prisma.income.deleteMany()
   await prisma.setting.deleteMany()
+  await prisma.pharmacist.deleteMany()
   await prisma.product.deleteMany()
   await prisma.customer.deleteMany()
   await prisma.supplier.deleteMany()
@@ -38,15 +39,69 @@ async function main() {
 
   // ===== USERS =====
   const passwordHash = await bcrypt.hash('pharma123', 12)
-  await prisma.user.create({
-    data: {
-      email: 'admin@pharmaos.com',
-      name: 'Admin User',
-      passwordHash,
-      role: 'admin',
-    },
-  })
-  console.log('✅ Created default admin user (admin@pharmaos.com / pharma123)')
+  
+  // Create users for all roles
+  const users = await Promise.all([
+    // SUPER_ADMIN (2)
+    prisma.user.create({ data: { email: 'superadmin1@pharmaos.com', password: passwordHash, userType: 'SUPER_ADMIN', isActive: true } }),
+    prisma.user.create({ data: { email: 'superadmin2@pharmaos.com', password: passwordHash, userType: 'SUPER_ADMIN', isActive: true } }),
+    
+    // ADMIN (2)
+    prisma.user.create({ data: { email: 'admin1@pharmaos.com', password: passwordHash, userType: 'ADMIN', isActive: true } }),
+    prisma.user.create({ data: { email: 'admin2@pharmaos.com', password: passwordHash, userType: 'ADMIN', isActive: true } }),
+    
+    // FINANCE (1)
+    prisma.user.create({ data: { email: 'finance@pharmaos.com', password: passwordHash, userType: 'FINANCE', isActive: true } }),
+    
+    // RECEIVING_BAY (1)
+    prisma.user.create({ data: { email: 'receiving@pharmaos.com', password: passwordHash, userType: 'RECEIVING_BAY', isActive: true } }),
+    
+    // MANAGER (1)
+    prisma.user.create({ data: { email: 'manager@pharmaos.com', password: passwordHash, userType: 'MANAGER', isActive: true } }),
+    
+    // DISPATCH (1)
+    prisma.user.create({ data: { email: 'dispatch@pharmaos.com', password: passwordHash, userType: 'DISPATCH', isActive: true } }),
+    
+    // RIDER (1)
+    prisma.user.create({ data: { email: 'rider@pharmaos.com', password: passwordHash, userType: 'RIDER', isActive: true } }),
+    
+    // PHARMACIST (3 - for pharmacist linking)
+    prisma.user.create({ data: { email: 'pharmacist1@pharmaos.com', password: passwordHash, userType: 'PHARMACIST', isActive: true } }),
+    prisma.user.create({ data: { email: 'pharmacist2@pharmaos.com', password: passwordHash, userType: 'PHARMACIST', isActive: true } }),
+    prisma.user.create({ data: { email: 'pharmacist3@pharmaos.com', password: passwordHash, userType: 'PHARMACIST', isActive: true } }),
+  ])
+  
+  console.log(`✅ Created ${users.length} users with various roles`)
+  console.log('🔑 Default password for all users: pharma123')
+
+  // ===== PHARMACISTS =====
+  const pharmacists = await Promise.all([
+    // 1 active pharmacist
+    prisma.pharmacist.create({
+      data: {
+        userId: users[9].id, // pharmacist1
+        licenseNumber: 'PH-2024-001',
+        isActive: true,
+      },
+    }),
+    // 2 inactive pharmacists
+    prisma.pharmacist.create({
+      data: {
+        userId: users[10].id, // pharmacist2
+        licenseNumber: 'PH-2024-002',
+        isActive: false,
+      },
+    }),
+    prisma.pharmacist.create({
+      data: {
+        userId: users[11].id, // pharmacist3
+        licenseNumber: 'PH-2024-003',
+        isActive: false,
+      },
+    }),
+  ])
+  
+  console.log(`✅ Created ${pharmacists.length} pharmacist records (1 active, 2 inactive)`)
 
   // ===== SUPPLIERS =====
   const suppliers = await Promise.all([

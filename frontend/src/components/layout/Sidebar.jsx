@@ -132,7 +132,7 @@ export default function Sidebar({ isOpen, onClose }) {
         {/* Navigation */}
         <nav className="flex-1 px-4 py-6 space-y-1 overflow-y-auto custom-scrollbar">
           {navItems
-            .filter((item) => !item.adminOnly || user?.role === 'admin')
+            .filter((item) => !item.adminOnly || user?.userType === 'ADMIN' || user?.userType === 'SUPER_ADMIN')
             .map((item) => {
               const Icon = item.icon
               const isExpanded = expandedMenus[item.label]

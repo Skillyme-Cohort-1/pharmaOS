@@ -265,7 +265,9 @@ export default function Dashboard() {
             {data.products.slice(0, 5).map((product) => (
               <div key={product.id} className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-lg bg-gray-100 flex-shrink-0 overflow-hidden">
-                  <img src="https://via.placeholder.com/40" alt={product.name} className="w-full h-full object-cover" />
+                  <div className="w-full h-full bg-gradient-to-br from-forty-accent/20 to-forty-primary/20 flex items-center justify-center">
+                    <Package size={20} className="text-gray-400" />
+                  </div>
                 </div>
                 <div className="flex-1 min-w-0">
                   <h4 className="text-sm font-bold text-gray-900 truncate">{product.name}</h4>

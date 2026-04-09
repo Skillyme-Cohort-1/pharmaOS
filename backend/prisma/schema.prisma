@@ -10,9 +10,15 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-enum Role {
-  admin
-  pharmacist
+enum UserType {
+  SUPER_ADMIN
+  ADMIN
+  FINANCE
+  RECEIVING_BAY
+  MANAGER
+  DISPATCH
+  RIDER
+  PHARMACIST
 }
 
 enum ProductStatus {
@@ -182,12 +188,23 @@ model Setting {
 }
 
 model User {
-  id           String   @id @default(uuid())
-  email        String   @unique
-  name         String
-  passwordHash String
-  role         Role     @default(pharmacist)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id           String    @id @default(uuid())
+  email        String    @unique
+  password     String
+  userType     UserType  @default(ADMIN)
+  isActive     Boolean   @default(true)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  pharmacist   Pharmacist?
+}
+
+model Pharmacist {
+  id            String   @id @default(uuid())
+  user          User     @relation(fields: [userId], references: [id])
+  userId        String   @unique
+  licenseNumber String   @unique
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 }
 

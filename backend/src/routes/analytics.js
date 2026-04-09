@@ -6,8 +6,12 @@ import {
   getProfitLoss,
   getRevenue,
 } from '../controllers/analyticsController.js'
+import { roleGuard } from '../middleware/roleGuard.js'
 
 const router = Router()
+
+// Apply role guard to all analytics routes
+router.use(roleGuard(['ADMIN', 'SUPER_ADMIN', 'FINANCE', 'MANAGER']))
 
 router.get('/sales', getSalesTrend)
 router.get('/top-products', getTopProducts)

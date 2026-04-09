@@ -32,7 +32,7 @@ export async function login(req, res, next) {
     }
 
     // Verify password
-    const isValid = await bcrypt.compare(password, user.passwordHash)
+    const isValid = await bcrypt.compare(password, user.password)
     if (!isValid) {
       throw new AppError('Invalid email or password', 401, 'INVALID_CREDENTIALS')
     }
@@ -46,8 +46,8 @@ export async function login(req, res, next) {
         user: {
           id: user.id,
           email: user.email,
-          name: user.name,
-          role: user.role,
+          userType: user.userType,
+          isActive: user.isActive,
         },
       },
     })

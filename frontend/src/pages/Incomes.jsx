@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react'
 import { Plus, Search } from 'lucide-react'
 import { useIncomes, useIncomeSummary } from '../hooks/useIncomes'
 import { incomesApi } from '../services/api'
+import { useToast } from '../context/ToastContext'
 import PageWrapper from '../components/layout/PageWrapper'
 import Card from '../components/ui/Card'
 import { formatCurrency } from '../utils/formatCurrency'
@@ -10,6 +11,7 @@ import { formatDate } from '../utils/formatDate'
 export default function Incomes() {
   const { incomes, loading, error, refetch } = useIncomes()
   const { summary } = useIncomeSummary()
+  const toast = useToast()
   const [searchQuery, setSearchQuery] = useState('')
   const [showForm, setShowForm] = useState(false)
   const [formData, setFormData] = useState({ category: '', amount: '', date: new Date().toISOString().split('T')[0], notes: '' })
@@ -17,18 +19,23 @@ export default function Incomes() {
 
   const handleSubmit = useCallback(async (e) => {
     e.preventDefault()
+    if (!formData.category || !formData.amount || parseFloat(formData.amount) <= 0) {
+      toast.error('Please fill in all required fields with valid amounts')
+      return
+    }
     setSaving(true)
     try {
       await incomesApi.create({ ...formData, amount: parseFloat(formData.amount) })
+      toast.success('Income added successfully')
       setFormData({ category: '', amount: '', date: new Date().toISOString().split('T')[0], notes: '' })
       setShowForm(false)
       refetch()
     } catch (err) {
-      console.error(err)
+      toast.error(err.message || 'Failed to add income')
     } finally {
       setSaving(false)
     }
-  }, [formData, refetch])
+  }, [formData, refetch, toast])
 
   const filtered = incomes.filter(i =>
     !searchQuery || i.category?.toLowerCase().includes(searchQuery.toLowerCase())
