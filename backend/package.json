@@ -7,8 +7,10 @@
   "scripts": {
     "dev": "nodemon server.js",
     "start": "node server.js",
+    "start:production": "npx prisma migrate deploy && node server.js",
     "build": "npx prisma generate",
-    "seed": "node prisma/seed.js"
+    "seed": "node prisma/seed.js",
+    "migrate:deploy": "npx prisma migrate deploy"
   },
   "keywords": [
     "pharmacy",
