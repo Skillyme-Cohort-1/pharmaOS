@@ -31,7 +31,7 @@ const app = express()
 
 // Middleware
 app.use(helmet({
-  contentSecurityPolicy: false, // Disable for easier production deployment of static assets
+  contentSecurityPolicy: false,
 }))
 app.use(cors({
   origin: process.env.CLIENT_URL || 'http://localhost:5173',
@@ -41,9 +41,13 @@ app.use(morgan('dev'))
 app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
 
-// Serve static files from the frontend/dist directory
+// Serve static files from frontend/dist (only in development/monolith mode)
+const isProduction = process.env.NODE_ENV === 'production'
 const frontendPath = path.join(__dirname, '../../../frontend/dist')
-app.use(express.static(frontendPath))
+
+if (!isProduction) {
+  app.use(express.static(frontendPath))
+}
 
 // Health check (public)
 app.get('/health', (req, res) => {
@@ -72,10 +76,12 @@ app.use('/api/expenses', expensesRouter)
 app.use('/api/incomes', incomesRouter)
 app.use('/api/settings', settingsRouter)
 
-// SPA Fallback: Serve index.html for any non-API routes
-app.get('*', (req, res) => {
-  res.sendFile(path.join(frontendPath, 'index.html'))
-})
+// SPA Fallback: Serve index.html for any non-API routes (only in development/monolith mode)
+if (!isProduction) {
+  app.get('*', (req, res) => {
+    res.sendFile(path.join(frontendPath, 'index.html'))
+  })
+}
 
 // Global error handler (must be last)
 app.use(errorHandler)
