@@ -57,7 +57,7 @@ Fill in the following settings:
 
 **Build & Start:**
 - **Build Command**: `cd backend && npm install && npx prisma generate`
-- **Start Command**: `cd backend && npx prisma migrate deploy && node server.js`
+- **Start Command**: `cd backend && chmod +x start.sh && bash start.sh`
 
 **Instance Type:**
 - **Plan**: Starter (free tier available) or higher
@@ -239,8 +239,9 @@ After frontend deployment, update the `CLIENT_URL` environment variable on Rende
 3. Or manually trigger deploy from Netlify dashboard
 
 **Important**: If you change the database schema:
-- Backend will automatically run `npx prisma migrate deploy` on startup
-- This is configured in the start command
+- Backend will automatically run `prisma db push --accept-data-loss` on startup
+- This is configured in `backend/start.sh`
+- The database schema will sync with your Prisma schema on every deployment
 
 ---
 
