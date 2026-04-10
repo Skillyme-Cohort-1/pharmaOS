@@ -84,21 +84,21 @@ export default function Import() {
 
   return (
     <PageWrapper title="Import Data">
-      <div className="max-w-4xl">
+      <div className="w-full max-w-4xl mx-auto px-0">
         {!result ? (
           <>
             {/* Upload Area */}
-            <Card className="mb-6">
+            <Card className="mb-4 sm:mb-6">
               <div
                 onDrop={handleDrop}
                 onDragOver={(e) => e.preventDefault()}
-                className="border-2 border-dashed border-gray-200 rounded-xl p-12 text-center hover:border-teal-500 transition-colors"
+                className="border-2 border-dashed border-gray-200 rounded-lg sm:rounded-xl p-6 sm:p-12 text-center hover:border-teal-500 transition-colors"
               >
-                <Upload size={48} className="mx-auto text-gray-300 mb-4" />
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                <Upload size={40} className="mx-auto text-gray-300 mb-4" />
+                <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-2">
                   Drop your CSV file here
                 </h3>
-                <p className="text-sm text-gray-500 mb-4">
+                <p className="text-xs sm:text-sm text-gray-500 mb-4">
                   or click to browse (max 5MB)
                 </p>
                 <input
@@ -108,17 +108,17 @@ export default function Import() {
                   onChange={handleFileSelect}
                   className="hidden"
                 />
-                <Button onClick={() => fileInputRef.current?.click()} variant="secondary">
+                <Button onClick={() => fileInputRef.current?.click()} variant="secondary" className="w-full sm:w-auto">
                   Browse Files
                 </Button>
               </div>
 
               {selectedFile && (
-                <div className="mt-4 flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                  <div className="flex items-center gap-3">
-                    <FileText size={20} className="text-teal-600" />
-                    <div>
-                      <p className="text-sm font-medium text-gray-900">{selectedFile.name}</p>
+                <div className="mt-4 flex items-center justify-between p-3 sm:p-4 bg-gray-50 rounded-lg">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <FileText size={20} className="text-teal-600 flex-shrink-0" />
+                    <div className="min-w-0">
+                      <p className="text-xs sm:text-sm font-medium text-gray-900 truncate">{selectedFile.name}</p>
                       <p className="text-xs text-gray-500">
                         {(selectedFile.size / 1024).toFixed(2)} KB
                       </p>
@@ -126,7 +126,7 @@ export default function Import() {
                   </div>
                   <button
                     onClick={handleReset}
-                    className="text-gray-400 hover:text-gray-600"
+                    className="text-gray-400 hover:text-gray-600 flex-shrink-0 p-1"
                   >
                     <X size={20} />
                   </button>
@@ -136,13 +136,13 @@ export default function Import() {
 
             {/* Preview */}
             {preview.length > 0 && (
-              <Card title="Preview (First 5 rows)" className="mb-6">
-                <div className="overflow-x-auto">
-                  <table className="min-w-full text-sm">
+              <Card title="Preview (First 5 rows)" className="mb-4 sm:mb-6">
+                <div className="overflow-x-auto -mx-4 sm:mx-0">
+                  <table className="min-w-full text-xs sm:text-sm">
                     <thead className="bg-gray-50">
                       <tr>
                         {Object.keys(preview[0]).map((key) => (
-                          <th key={key} className="px-4 py-2 text-left font-medium text-gray-500">
+                          <th key={key} className="px-3 sm:px-4 py-2 text-left font-medium text-gray-500 whitespace-nowrap">
                             {key}
                           </th>
                         ))}
@@ -152,7 +152,7 @@ export default function Import() {
                       {preview.map((row, idx) => (
                         <tr key={idx}>
                           {Object.values(row).map((val, i) => (
-                            <td key={i} className="px-4 py-2 text-gray-700">
+                            <td key={i} className="px-3 sm:px-4 py-2 text-gray-700 whitespace-nowrap truncate">
                               {val}
                             </td>
                           ))}
@@ -166,11 +166,11 @@ export default function Import() {
 
             {/* Action Button */}
             {selectedFile && (
-              <div className="flex justify-end gap-3">
-                <Button variant="secondary" onClick={handleReset}>
+              <div className="flex flex-col-reverse sm:flex-row gap-2 sm:gap-3 justify-end">
+                <Button variant="secondary" onClick={handleReset} className="w-full sm:w-auto">
                   Cancel
                 </Button>
-                <Button onClick={handleUpload} loading={uploading}>
+                <Button onClick={handleUpload} loading={uploading} className="w-full sm:w-auto">
                   {uploading ? 'Importing...' : 'Confirm Import'}
                 </Button>
               </div>

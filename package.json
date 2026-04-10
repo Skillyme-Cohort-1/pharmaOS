@@ -1,13 +1,22 @@
 {
-  "name": "pharmacy-ui",
+  "name": "pharmaos-monorepo",
+  "version": "1.0.0",
   "private": true,
-  "version": "0.0.0",
   "type": "module",
+  "workspaces": [
+    "backend",
+    "frontend"
+  ],
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "lint": "eslint .",
-    "preview": "vite preview"
+    "dev:backend": "npm run dev -w backend",
+    "dev:frontend": "npm run dev -w frontend",
+    "build:backend": "npm run build -w backend",
+    "build:frontend": "npm run build -w frontend",
+    "start:backend": "npm start -w backend",
+    "migrate:dev": "npm run migrate:dev -w backend",
+    "build": "npm run build:frontend && npm run build:backend",
+    "start": "npm run start:backend",
+    "lint": "eslint ."
   },
   "prisma": {
     "seed": "npx ts-node prisma/seed.ts"

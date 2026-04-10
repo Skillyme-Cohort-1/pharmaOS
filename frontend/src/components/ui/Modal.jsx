@@ -4,9 +4,9 @@ export default function Modal({ isOpen, onClose, title, children, size = 'md' })
   if (!isOpen) return null
 
   const sizes = {
-    sm: 'max-w-md',
-    md: 'max-w-lg',
-    lg: 'max-w-2xl',
+    sm: 'sm:max-w-md',
+    md: 'sm:max-w-lg',
+    lg: 'sm:max-w-2xl',
   }
 
   return (
@@ -19,13 +19,13 @@ export default function Modal({ isOpen, onClose, title, children, size = 'md' })
         />
 
         {/* Modal */}
-        <div className={`relative inline-block w-full ${sizes[size]} p-6 my-8 overflow-hidden text-left align-middle transition-all transform bg-white rounded-2xl shadow-2xl`}>
+        <div className={`relative w-full ${sizes[size]} p-4 sm:p-6 my-4 sm:my-8 overflow-hidden text-left align-middle transition-all transform bg-white rounded-lg sm:rounded-2xl shadow-2xl max-h-[85vh] overflow-y-auto`}>
           {/* Header */}
-          <div className="flex items-center justify-between mb-6">
-            <h3 className="text-xl font-semibold text-gray-900">{title}</h3>
+          <div className="flex items-center justify-between mb-4 sm:mb-6 sticky top-0 bg-white z-10">
+            <h3 className="text-lg sm:text-xl font-semibold text-gray-900 pr-4 break-words flex-1">{title}</h3>
             <button
               onClick={onClose}
-              className="text-gray-400 hover:text-gray-600 transition-colors"
+              className="flex-shrink-0 text-gray-400 hover:text-gray-600 transition-colors p-1 hover:bg-gray-100 rounded-lg"
             >
               <X size={20} />
             </button>

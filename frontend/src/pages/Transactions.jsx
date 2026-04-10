@@ -75,8 +75,8 @@ export default function Transactions() {
 
   return (
     <PageWrapper title="Transactions">
-      {/* Type Filter */}
-      <div className="flex gap-2 mb-4">
+      {/* Type Filter - Mobile scrollable */}
+      <div className="flex gap-2 mb-4 overflow-x-auto pb-2 -mx-4 px-4 sm:mx-0 sm:px-0">
         {typeTabs.map((tab) => (
           <button
             key={tab.value}
@@ -84,7 +84,7 @@ export default function Transactions() {
               setTypeFilter(tab.value)
               setPage(1)
             }}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+            className={`px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors whitespace-nowrap ${
               typeFilter === tab.value
                 ? 'bg-teal-600 text-white'
                 : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
@@ -95,8 +95,8 @@ export default function Transactions() {
         ))}
       </div>
 
-      {/* Date Filter */}
-      <div className="flex gap-2 mb-4">
+      {/* Date Filter - Mobile scrollable */}
+      <div className="flex gap-2 mb-4 overflow-x-auto pb-2 -mx-4 px-4 sm:mx-0 sm:px-0">
         {dateTabs.map((tab) => (
           <button
             key={tab.value}
@@ -104,7 +104,7 @@ export default function Transactions() {
               setDateFilter(tab.value)
               setPage(1)
             }}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+            className={`px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors whitespace-nowrap ${
               dateFilter === tab.value
                 ? 'bg-teal-600 text-white'
                 : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
@@ -115,11 +115,12 @@ export default function Transactions() {
         ))}
       </div>
 
-      {/* Table */}
+      {/* Table - with mobileCard */}
       <Table
         columns={columns}
         data={transactions}
         loading={loading}
+        mobileCard={true}
         emptyState={
           <EmptyState
             icon={<FileText size={48} />}

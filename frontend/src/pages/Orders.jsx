@@ -8,6 +8,7 @@ import Input from '../components/ui/Input'
 import Select from '../components/ui/Select'
 import Table from '../components/ui/Table'
 import EmptyState from '../components/ui/EmptyState'
+import OrderModal from '../components/forms/OrderModal'
 import { useToast } from '../context/ToastContext'
 import { useOrders } from '../hooks/useOrders'
 import { useProducts } from '../hooks/useProducts'
@@ -28,6 +29,8 @@ export default function Orders() {
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('')
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [selectedOrder, setSelectedOrder] = useState(null)
+  
   const [formData, setFormData] = useState({
     customerName: '',
     customerPhone: '',
@@ -49,12 +52,13 @@ export default function Orders() {
     ...products.map(p => ({ value: p.id, label: `${p.name} - ${formatCurrency(p.unitPrice)}` })),
   ]
 
-  const handleOpenModal = () => {
+  const handleOpenModal = (order = null) => {
+    setSelectedOrder(order)
     setFormData({
-      customerName: '',
-      customerPhone: '',
-      productId: '',
-      quantity: 1,
+      customerName: order ? order.customerName : '',
+      customerPhone: order ? order.customerPhone : '',
+      productId: order ? (order.productId || order.product?.id) : '',
+      quantity: order ? order.quantity : 1,
     })
     setFormErrors({})
     setIsModalOpen(true)
@@ -108,7 +112,7 @@ export default function Orders() {
         return (
           <Button 
             size="sm" 
-            onClick={() => handleStatusUpdate(order.id, 'processing')}
+            onClick={(e) => { e.stopPropagation(); handleStatusUpdate(order.id, 'processing'); }}
             loading={isProcessing}
           >
             Start Processing
@@ -120,7 +124,7 @@ export default function Orders() {
             <Button 
               size="sm" 
               variant="primary"
-              onClick={() => handleStatusUpdate(order.id, 'completed')}
+              onClick={(e) => { e.stopPropagation(); handleStatusUpdate(order.id, 'completed'); }}
               loading={isProcessing}
             >
               Complete
@@ -128,7 +132,7 @@ export default function Orders() {
             <Button 
               size="sm" 
               variant="danger"
-              onClick={() => handleStatusUpdate(order.id, 'cancelled')}
+              onClick={(e) => { e.stopPropagation(); handleStatusUpdate(order.id, 'cancelled'); }}
               loading={isProcessing}
               disabled={isProcessing}
             >
@@ -170,18 +174,18 @@ export default function Orders() {
     <PageWrapper 
       title="Orders"
       action={
-        <Button onClick={handleOpenModal}>
+        <Button onClick={handleOpenModal} className="w-full sm:w-auto">
           Create Order
         </Button>
       }
     >
-      {/* Filter Tabs */}
-      <div className="flex gap-2 mb-4">
+      {/* Filter Tabs - Mobile scrollable */}
+      <div className="flex gap-2 mb-4 overflow-x-auto pb-2 -mx-4 px-4 sm:mx-0 sm:px-0">
         {statusTabs.map((tab) => (
           <button
             key={tab.value}
             onClick={() => setStatusFilter(tab.value)}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+            className={`px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors whitespace-nowrap ${
               statusFilter === tab.value
                 ? 'bg-teal-600 text-white'
                 : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
@@ -199,15 +203,17 @@ export default function Orders() {
           placeholder="Search by customer name..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
+          className="w-full px-3 sm:px-4 py-2.5 sm:py-2 text-base sm:text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
         />
       </div>
 
-      {/* Table */}
+      {/* Table - with mobileCard prop */}
       <Table
         columns={columns}
         data={orders}
         loading={loading}
+        onRowClick={(row) => handleOpenModal(row)}
+        mobileCard={true}
         emptyState={
           <EmptyState
             icon={<ShoppingCart size={48} />}
@@ -222,56 +228,13 @@ export default function Orders() {
         }
       />
 
-      {/* Create Order Modal */}
-      <Modal
+      {/* Create/Edit Order Modal */}
+      <OrderModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        title="Create Order"
-      >
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <Input
-            label="Customer Name *"
-            value={formData.customerName}
-            onChange={(e) => setFormData({ ...formData, customerName: e.target.value })}
-            error={formErrors.customerName}
-            placeholder="e.g., John Doe"
-          />
-          
-          <Input
-            label="Phone Number *"
-            value={formData.customerPhone}
-            onChange={(e) => setFormData({ ...formData, customerPhone: e.target.value })}
-            error={formErrors.customerPhone}
-            placeholder="e.g., 0712345678"
-          />
-          
-          <Select
-            label="Product *"
-            value={formData.productId}
-            onChange={(e) => setFormData({ ...formData, productId: e.target.value })}
-            options={productOptions}
-            error={formErrors.productId}
-          />
-          
-          <Input
-            label="Quantity *"
-            type="number"
-            min="1"
-            value={formData.quantity}
-            onChange={(e) => setFormData({ ...formData, quantity: parseInt(e.target.value) || 1 })}
-            error={formErrors.quantity}
-          />
-
-          <div className="flex justify-end gap-3 pt-4">
-            <Button type="button" variant="secondary" onClick={() => setIsModalOpen(false)}>
-              Cancel
-            </Button>
-            <Button type="submit" loading={saving}>
-              Create Order
-            </Button>
-          </div>
-        </form>
-      </Modal>
+        order={selectedOrder}
+        onSuccess={() => refetch()}
+      />
     </PageWrapper>
   )
 }

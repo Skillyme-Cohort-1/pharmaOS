@@ -10,6 +10,7 @@ import Select from '../components/ui/Select'
 import Table from '../components/ui/Table'
 import EmptyState from '../components/ui/EmptyState'
 import ConfirmModal from '../components/ui/ConfirmModal'
+import ProductModal from '../components/forms/ProductModal'
 import { useToast } from '../context/ToastContext'
 import { useProducts } from '../hooks/useProducts'
 import { formatCurrency } from '../utils/formatCurrency'
@@ -177,13 +178,13 @@ export default function Inventory() {
     { header: 'Actions', align: 'right', render: (row) => (
       <div className="flex items-center justify-end gap-2">
         <button
-          onClick={() => handleOpenModal(row)}
+          onClick={(e) => { e.stopPropagation(); handleOpenModal(row); }}
           className="p-1.5 text-gray-600 hover:bg-gray-100 rounded"
         >
           <Pencil size={16} />
         </button>
         <button
-          onClick={() => handleOpenDeleteModal(row)}
+          onClick={(e) => { e.stopPropagation(); handleOpenDeleteModal(row); }}
           className="p-1.5 text-red-600 hover:bg-red-50 rounded"
         >
           <Trash2 size={16} />
@@ -207,13 +208,13 @@ export default function Inventory() {
         </div>
       }
     >
-      {/* Filter Tabs */}
-      <div className="flex gap-2 mb-4">
+      {/* Filter Tabs - Mobile scrollable */}
+      <div className="flex gap-2 mb-4 overflow-x-auto pb-2 -mx-4 px-4 sm:mx-0 sm:px-0">
         {statusTabs.map((tab) => (
           <button
             key={tab.value}
             onClick={() => handleFilterChange(tab.value)}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+            className={`px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors whitespace-nowrap ${
               statusFilter === tab.value
                 ? 'bg-teal-600 text-white'
                 : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
@@ -231,15 +232,17 @@ export default function Inventory() {
           placeholder="Search products..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
+          className="w-full px-3 sm:px-4 py-2.5 sm:py-2 text-base sm:text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
         />
       </div>
 
-      {/* Table */}
+      {/* Table - with mobileCard prop for responsive view */}
       <Table
         columns={columns}
         data={products}
         loading={loading}
+        onRowClick={(row) => handleOpenModal(row)}
+        mobileCard={true}
         emptyState={
           <EmptyState
             icon={<Package size={48} />}
@@ -256,72 +259,12 @@ export default function Inventory() {
       />
 
       {/* Add/Edit Modal */}
-      <Modal
+      <ProductModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        title={selectedProduct ? 'Edit Product' : 'Add Product'}
-      >
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <Input
-            label="Product Name *"
-            value={formData.name}
-            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-            error={formErrors.name}
-            placeholder="e.g., Amoxicillin 500mg"
-          />
-          
-          <Select
-            label="Category"
-            value={formData.category}
-            onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-            options={categoryOptions}
-          />
-          
-          <div className="grid grid-cols-2 gap-4">
-            <Input
-              label="Quantity *"
-              type="number"
-              min="0"
-              value={formData.quantity}
-              onChange={(e) => setFormData({ ...formData, quantity: parseInt(e.target.value) || 0 })}
-              error={formErrors.quantity}
-            />
-            <Input
-              label="Unit Price (KES) *"
-              type="number"
-              min="0"
-              step="0.01"
-              value={formData.unitPrice}
-              onChange={(e) => setFormData({ ...formData, unitPrice: parseFloat(e.target.value) || 0 })}
-              error={formErrors.unitPrice}
-            />
-          </div>
-          
-          <Input
-            label="Expiry Date *"
-            type="date"
-            value={formData.expiryDate}
-            onChange={(e) => setFormData({ ...formData, expiryDate: e.target.value })}
-            error={formErrors.expiryDate}
-          />
-          
-          <Input
-            label="Supplier"
-            value={formData.supplier}
-            onChange={(e) => setFormData({ ...formData, supplier: e.target.value })}
-            placeholder="Optional"
-          />
-
-          <div className="flex justify-end gap-3 pt-4">
-            <Button type="button" variant="secondary" onClick={() => setIsModalOpen(false)}>
-              Cancel
-            </Button>
-            <Button type="submit" loading={saving}>
-              {selectedProduct ? 'Update Product' : 'Add Product'}
-            </Button>
-          </div>
-        </form>
-      </Modal>
+        product={selectedProduct}
+        onSuccess={() => refetch()}
+      />
 
       {/* Delete Confirmation Modal */}
       <ConfirmModal

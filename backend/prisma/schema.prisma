@@ -10,6 +10,17 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum UserType {
+  SUPER_ADMIN
+  ADMIN
+  FINANCE
+  RECEIVING_BAY
+  MANAGER
+  DISPATCH
+  RIDER
+  PHARMACIST
+}
+
 enum ProductStatus {
   active
   expired
@@ -36,20 +47,52 @@ enum AlertType {
   low_stock
 }
 
+model Customer {
+  id        String    @id @default(uuid())
+  name      String
+  phone     String?
+  email     String?   @unique
+  address   String?
+  balance   Decimal   @default(0) @db.Decimal(10, 2)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  orders    Order[]
+}
+
+model Supplier {
+  id            String    @id @default(uuid())
+  name          String
+  phone         String?
+  contactPerson String?
+  email         String?   @unique
+  address       String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  products      Product[]
+  purchases     Purchase[]
+}
+
 model Product {
-  id           String        @id @default(uuid())
-  name         String
-  category     String?
-  quantity     Int           @default(0)
-  unitPrice    Decimal       @db.Decimal(10, 2)
-  expiryDate   DateTime      @db.Date
-  supplier     String?
-  status       ProductStatus @default(active)
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
-  orders       Order[]
-  alerts       Alert[]
-  transactions Transaction[]
+  id            String        @id @default(uuid())
+  name          String
+  generic       String?
+  category      String?
+  quantity      Int           @default(0)
+  purchasePrice Decimal?      @db.Decimal(10, 2)
+  unitPrice     Decimal       @db.Decimal(10, 2)
+  expiryDate    DateTime      @db.Date
+  batchNumber   String?
+  barcode       String?       @unique
+  minimumStock  Int           @default(10)
+  status        ProductStatus @default(active)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  supplier      Supplier?     @relation(fields: [supplierId], references: [id])
+  supplierId    String?
+  orders        Order[]
+  alerts        Alert[]
+  transactions  Transaction[]
+  purchaseItems PurchaseItem[]
 }
 
 model Order {
@@ -61,8 +104,13 @@ model Order {
   quantity      Int
   totalAmount   Decimal      @db.Decimal(10, 2)
   status        OrderStatus  @default(pending)
+  paymentMethod String?
+  amountPaid    Decimal?     @db.Decimal(10, 2)
+  amountDue     Decimal?     @db.Decimal(10, 2)
   notes         String?
   createdAt     DateTime     @default(now())
+  customer      Customer?    @relation(fields: [customerId], references: [id])
+  customerId    String?
   transaction   Transaction?
 }
 
@@ -88,3 +136,75 @@ model Alert {
   isRead      Boolean   @default(false)
   triggeredAt DateTime  @default(now())
 }
+
+model Purchase {
+  id           String         @id @default(uuid())
+  supplier     Supplier       @relation(fields: [supplierId], references: [id])
+  supplierId   String
+  invoiceNo    String?        @unique
+  purchaseDate DateTime       @db.Date
+  totalAmount  Decimal        @db.Decimal(10, 2)
+  notes        String?
+  createdAt    DateTime       @default(now())
+  items        PurchaseItem[]
+}
+
+model PurchaseItem {
+  id         String   @id @default(uuid())
+  purchase   Purchase @relation(fields: [purchaseId], references: [id])
+  purchaseId String
+  product    Product  @relation(fields: [productId], references: [id])
+  productId  String
+  quantity   Int
+  unitCost   Decimal  @db.Decimal(10, 2)
+  total      Decimal  @db.Decimal(10, 2)
+}
+
+model Expense {
+  id        String   @id @default(uuid())
+  category  String
+  amount    Decimal  @db.Decimal(10, 2)
+  date      DateTime @db.Date
+  notes     String?
+  status    String   @default("completed")
+  createdAt DateTime @default(now())
+}
+
+model Income {
+  id        String   @id @default(uuid())
+  category  String
+  amount    Decimal  @db.Decimal(10, 2)
+  date      DateTime @db.Date
+  notes     String?
+  status    String   @default("completed")
+  createdAt DateTime @default(now())
+}
+
+model Setting {
+  id        String   @id @default(uuid())
+  key       String   @unique
+  value     String
+  updatedAt DateTime @updatedAt
+}
+
+model User {
+  id           String    @id @default(uuid())
+  email        String    @unique
+  password     String
+  userType     UserType  @default(ADMIN)
+  isActive     Boolean   @default(true)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  pharmacist   Pharmacist?
+}
+
+model Pharmacist {
+  id            String   @id @default(uuid())
+  user          User     @relation(fields: [userId], references: [id])
+  userId        String   @unique
+  licenseNumber String   @unique
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
