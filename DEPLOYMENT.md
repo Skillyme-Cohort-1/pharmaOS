@@ -1,12 +1,12 @@
-# Deployment Guide: Render & Vercel
+# Deployment Guide: Render & Netlify
 
-This guide covers deploying PharmaOS with the backend on Render and the frontend on Vercel.
+This guide covers deploying PharmaOS with the backend on Render and the frontend on Netlify.
 
 ## Table of Contents
 - [Overview](#overview)
 - [Prerequisites](#prerequisites)
 - [Step 1: Deploy Backend on Render](#step-1-deploy-backend-on-render)
-- [Step 2: Deploy Frontend on Vercel](#step-2-deploy-frontend-on-vercel)
+- [Step 2: Deploy Frontend on Netlify](#step-2-deploy-frontend-on-netlify)
 - [Step 3: Connect Frontend to Backend](#step-3-connect-frontend-to-backend)
 - [Step 4: Verify Deployment](#step-4-verify-deployment)
 - [Troubleshooting](#troubleshooting)
@@ -17,14 +17,14 @@ This guide covers deploying PharmaOS with the backend on Render and the frontend
 
 ### Architecture
 ```
-Frontend (Vercel)  →  Backend API (Render)  →  Database (Render PostgreSQL)
-   https://              https://                  PostgreSQL
+Frontend (Netlify)  →  Backend API (Render)  →  Database (Render PostgreSQL)
+   https://               https://                  PostgreSQL
 ```
 
 ### Deployment Strategy
 This is a **monorepo** deployment where:
 - **Backend** (`/backend`) deploys to Render as a web service
-- **Frontend** (`/frontend`) deploys to Vercel as a static site
+- **Frontend** (`/frontend`) deploys to Netlify as a static site
 - Both services are deployed independently from the same codebase
 
 ---
@@ -33,7 +33,7 @@ This is a **monorepo** deployment where:
 
 1. **GitHub Repository**: Push your code to GitHub
 2. **Render Account**: Sign up at [render.com](https://render.com)
-3. **Vercel Account**: Sign up at [vercel.com](https://vercel.com)
+3. **Netlify Account**: Sign up at [netlify.com](https://netlify.com)
 4. **Database**: Render provides PostgreSQL databases (or use external provider)
 
 ---
@@ -89,39 +89,38 @@ Click **Create Web Service** and wait for deployment to complete.
 
 ---
 
-## Step 2: Deploy Frontend on Vercel
+## Step 2: Deploy Frontend on Netlify
 
 ### 2.1 Import Project
-1. Go to [Vercel Dashboard](https://vercel.com/dashboard)
-2. Click **Add New...** → **Project**
-3. Import your GitHub repository
-4. Select the same branch as backend
+1. Go to [Netlify Dashboard](https://app.netlify.com/)
+2. Click **Add new site** → **Import an existing project**
+3. Connect your GitHub account
+4. Select your repository: `pharmaOS`
+5. Select the branch: `main`
 
-### 2.2 Configure Project
-Vercel should auto-detect it's a Vite/React app. Configure as follows:
+### 2.2 Configure Build Settings
+Netlify should auto-detect from `frontend/netlify.toml`. Verify these settings:
 
-**Framework Preset**: `Vite`
+**Base directory**: `frontend`
 
-**Root Directory**: `frontend` (Important! This tells Vercel where to build from)
+**Build command**: `npm run build`
 
-**Build Command**: `npm run build` (Vercel will auto-fill this)
-
-**Output Directory**: `dist`
-
-**Install Command**: `npm install`
+**Publish directory**: `frontend/dist`
 
 ### 2.3 Environment Variables
-Add this environment variable in Vercel:
+Add this environment variable in Netlify:
 
-| Variable | Value | Notes |
+Go to **Site configuration** → **Environment variables** → **Add a variable**:
+
+| Key | Value | Notes |
 |----------|-------|-------|
 | `VITE_API_URL` | `https://pharmaos-backend.onrender.com/api` | **Update with your actual Render URL** |
 
 ### 2.4 Deploy
-Click **Deploy** and wait for the build to complete.
+Click **Deploy site** and wait for the build to complete.
 
 **Verify:**
-- Visit your Vercel URL (e.g., `https://your-app.vercel.app`)
+- Visit your Netlify URL (e.g., `https://your-app.netlify.app`)
 - You should see the PharmaOS login page
 
 ---
@@ -132,11 +131,11 @@ Click **Deploy** and wait for the build to complete.
 After frontend deployment, update the `CLIENT_URL` environment variable on Render:
 
 1. Go to Render Dashboard → Your backend service → **Environment**
-2. Update `CLIENT_URL` to your Vercel URL: `https://your-app.vercel.app`
+2. Update `CLIENT_URL` to your Netlify URL: `https://your-app.netlify.app`
 3. Click **Save Changes** (this will trigger a redeployment)
 
 ### 3.2 Verify API Connection
-1. Open browser console on your Vercel site
+1. Open browser console on your Netlify site
 2. Try logging in
 3. Check Network tab for API calls to your Render backend
 
@@ -151,7 +150,7 @@ After frontend deployment, update the `CLIENT_URL` environment variable on Rende
 - [ ] CORS allows requests from your Vercel domain
 
 ### Frontend Checks
-- [ ] Site loads on Vercel
+- [ ] Site loads on Netlify
 - [ ] Can navigate to all pages
 - [ ] Login/registration works
 - [ ] API calls succeed (check browser console)
@@ -188,13 +187,13 @@ After frontend deployment, update the `CLIENT_URL` environment variable on Rende
 
 ### Frontend Issues
 
-**Problem**: Build fails on Vercel
-- **Solution**: Check Vercel build logs
-- Ensure Root Directory is set to `frontend`
+**Problem**: Build fails on Netlify
+- **Solution**: Check Netlify build logs
+- Ensure Base directory is set to `frontend`
 - Verify all dependencies are in `frontend/package.json`
 
 **Problem**: API calls fail with 404
-- **Solution**: Verify `VITE_API_URL` environment variable on Vercel points to your Render backend
+- **Solution**: Verify `VITE_API_URL` environment variable on Netlify points to your Render backend
 - Should be: `https://your-backend.onrender.com/api` (NOT just the domain)
 
 **Problem**: Blank page after deployment
@@ -217,11 +216,11 @@ After frontend deployment, update the `CLIENT_URL` environment variable on Rende
 
 ## Post-Deployment Checklist
 
-- [ ] SSL certificates active (both Render & Vercel provide HTTPS automatically)
+- [ ] SSL certificates active (both Render & Netlify provide HTTPS automatically)
 - [ ] Environment variables secured (no secrets in code)
 - [ ] Database backups configured (Render provides automatic backups on paid plans)
-- [ ] Monitoring set up (Render & Vercel both provide logs)
-- [ ] Custom domain configured (optional, in both Render & Vercel settings)
+- [ ] Monitoring set up (Render & Netlify both provide logs)
+- [ ] Custom domain configured (optional, in both Render & Netlify settings)
 
 ---
 
@@ -234,10 +233,10 @@ After frontend deployment, update the `CLIENT_URL` environment variable on Rende
 2. Render will auto-deploy (if auto-deploy is enabled)
 3. Or manually trigger deploy from Render dashboard
 
-**Frontend (Vercel)**:
+**Frontend (Netlify)**:
 1. Push changes to your deployment branch
-2. Vercel will auto-deploy
-3. Or manually trigger deploy from Vercel dashboard
+2. Netlify will auto-deploy
+3. Or manually trigger deploy from Netlify dashboard
 
 **Important**: If you change the database schema:
 - Backend will automatically run `npx prisma migrate deploy` on startup
@@ -252,9 +251,9 @@ After frontend deployment, update the `CLIENT_URL` environment variable on Rende
 - PostgreSQL Database: Free tier available (90 days), ~$7/month after
 - **Total**: ~$14/month minimum for production
 
-**Vercel (Frontend)**:
-- Hobby Plan: Free
-- Pro Plan: $20/month (optional, for team features)
+**Netlify (Frontend)**:
+- Team Plan: Free
+- Pro Plan: $19/month (optional, for team features)
 - **Total**: Free for most use cases
 
 **Estimated Total**: $14-34/month depending on Render plan
@@ -265,7 +264,7 @@ After frontend deployment, update the `CLIENT_URL` environment variable on Rende
 
 For issues not covered here:
 - Render Docs: https://render.com/docs
-- Vercel Docs: https://vercel.com/docs
+- Netlify Docs: https://docs.netlify.com
 - Prisma Docs: https://www.prisma.io/docs
 
 ---
@@ -277,9 +276,9 @@ For issues not covered here:
 https://pharmaos-backend.onrender.com
 ```
 
-### Vercel Frontend URL
+### Netlify Frontend URL
 ```
-https://your-app.vercel.app
+https://your-app.netlify.app
 ```
 
 ### Key Environment Variables
