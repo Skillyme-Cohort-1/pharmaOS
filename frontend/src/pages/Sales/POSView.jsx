@@ -1,17 +1,18 @@
 import { useState, useMemo } from 'react'
-import { 
-  Search, 
-  ShoppingCart, 
-  UserPlus, 
-  Calculator, 
-  Trash2, 
-  Plus, 
-  Minus, 
-  Printer, 
-  RotateCcw, 
-  Save, 
-  List, 
-  History, 
+import { useNavigate } from 'react-router-dom'
+import {
+  Search,
+  ShoppingCart,
+  UserPlus,
+  Calculator,
+  Trash2,
+  Plus,
+  Minus,
+  Printer,
+  RotateCcw,
+  Save,
+  List,
+  History,
   Power,
   X,
   ScanLine,
@@ -19,7 +20,8 @@ import {
 } from 'lucide-react'
 import PageWrapper from '../../components/layout/PageWrapper'
 import ProductCard from '../../components/ui/ProductCard'
-import useLocalStorage from '../../hooks/useLocalStorage'
+import { useAuth } from '../../context/AuthContext'
+import { useToast } from '../../context/ToastContext'
 import { formatCurrency } from '../../utils/formatCurrency'
 
 // --- Mock Products from Image ---
@@ -37,12 +39,41 @@ const MOCK_POS_PRODUCTS = [
 ]
 
 export default function POSView() {
+  const navigate = useNavigate()
+  const { logout } = useAuth()
+  const toast = useToast()
   const [searchQuery, setSearchQuery] = useState('')
   const [cart, setCart] = useState([])
   const [customer, setCustomer] = useState('Select Customer')
   const [receiveAmount, setReceiveAmount] = useState(0)
   const [discount, setDiscount] = useState(0)
   const [deliveryCost, setDeliveryCost] = useState(0)
+  const [showCalculator, setShowCalculator] = useState(false)
+  const [calcDisplay, setCalcDisplay] = useState('0')
+  const [calcExpression, setCalcExpression] = useState('')
+
+  // Simple calculator logic
+  const handleCalcInput = (value) => {
+    if (value === 'C') {
+      setCalcDisplay('0')
+      setCalcExpression('')
+    } else if (value === '=') {
+      try {
+        // eslint-disable-next-line no-eval
+        const result = eval(calcExpression + calcDisplay)
+        setCalcDisplay(String(result))
+        setCalcExpression('')
+      } catch {
+        setCalcDisplay('Error')
+        setCalcExpression('')
+      }
+    } else if (['+', '-', '*', '/'].includes(value)) {
+      setCalcExpression(calcExpression + calcDisplay + value)
+      setCalcDisplay('0')
+    } else {
+      setCalcDisplay(calcDisplay === '0' ? value : calcDisplay + value)
+    }
+  }
 
   const addToCart = (product) => {
     if (product.stock <= 0) return
@@ -140,10 +171,30 @@ export default function POSView() {
                <div className="flex items-center justify-between mb-4">
                   <h3 className="text-sm font-bold text-gray-800">Quick Action</h3>
                   <div className="flex gap-1.5">
-                    <button className="px-3 py-2 bg-white border border-gray-200 rounded text-xs font-bold text-gray-500 hover:bg-gray-50 transition-colors">Stock List</button>
-                    <button className="px-3 py-2 bg-white border border-gray-200 rounded text-xs font-bold text-gray-500 hover:bg-gray-50 transition-colors">Today Sales</button>
-                    <button className="p-2 bg-white border border-gray-200 rounded text-gray-500 hover:bg-gray-50 transition-colors"><Calculator size={16} /></button>
-                    <button className="p-2 bg-white border border-gray-200 rounded text-red-500 hover:bg-red-50 transition-colors"><Power size={16} /></button>
+                    <button 
+                      onClick={() => navigate('/stock/current')}
+                      className="px-3 py-2 bg-white border border-gray-200 rounded text-xs font-bold text-gray-500 hover:bg-gray-50 transition-colors"
+                    >
+                      Stock List
+                    </button>
+                    <button 
+                      onClick={() => navigate('/sales')}
+                      className="px-3 py-2 bg-white border border-gray-200 rounded text-xs font-bold text-gray-500 hover:bg-gray-50 transition-colors"
+                    >
+                      Today Sales
+                    </button>
+                    <button 
+                      onClick={() => setShowCalculator(true)}
+                      className="p-2 bg-white border border-gray-200 rounded text-gray-500 hover:bg-gray-50 transition-colors"
+                    >
+                      <Calculator size={16} />
+                    </button>
+                    <button 
+                      onClick={() => { if (confirm('Are you sure you want to logout?')) logout() }}
+                      className="p-2 bg-white border border-gray-200 rounded text-red-500 hover:bg-red-50 transition-colors"
+                    >
+                      <Power size={16} />
+                    </button>
                   </div>
                </div>
 
@@ -161,7 +212,11 @@ export default function POSView() {
                     </select>
                     <ChevronDown size={18} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
                   </div>
-                  <button className="p-2.5 bg-forty-dark text-white rounded-lg hover:bg-black transition-colors shadow-sm">
+                  <button 
+                    onClick={() => navigate('/customers')}
+                    className="p-2.5 bg-forty-dark text-white rounded-lg hover:bg-black transition-colors shadow-sm"
+                    title="Add New Customer"
+                  >
                     <Plus size={20} />
                   </button>
                </div>
@@ -320,6 +375,70 @@ export default function POSView() {
           </div>
         </div>
       </div>
+
+      {/* Calculator Modal */}
+      {showCalculator && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setShowCalculator(false)}>
+          <div className="bg-white rounded-2xl shadow-2xl p-6 w-72" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-sm font-bold text-gray-800">Calculator</h3>
+              <button onClick={() => setShowCalculator(false)} className="text-gray-400 hover:text-gray-600"><X size={18} /></button>
+            </div>
+            
+            {/* Display */}
+            <div className="mb-4 p-3 bg-gray-50 rounded-lg border border-gray-200 text-right">
+              {calcExpression && <p className="text-xs text-gray-400 mb-1">{calcExpression}</p>}
+              <p className="text-2xl font-bold text-gray-900 truncate">{calcDisplay}</p>
+            </div>
+
+            {/* Buttons */}
+            <div className="grid grid-cols-4 gap-2">
+              {['C', '7', '8', '9'].map(btn => (
+                <button
+                  key={btn}
+                  onClick={() => handleCalcInput(btn)}
+                  className={`p-3 rounded-lg text-sm font-bold transition-colors ${btn === 'C' ? 'bg-red-100 text-red-600 hover:bg-red-200' : 'bg-white border border-gray-200 text-gray-700 hover:bg-gray-50'}`}
+                >
+                  {btn}
+                </button>
+              ))}
+              {['/', '4', '5', '6'].map(btn => (
+                <button
+                  key={btn}
+                  onClick={() => handleCalcInput(btn)}
+                  className={`p-3 rounded-lg text-sm font-bold transition-colors ${btn === '/' ? 'bg-gray-100 text-gray-700 hover:bg-gray-200' : 'bg-white border border-gray-200 text-gray-700 hover:bg-gray-50'}`}
+                >
+                  {btn}
+                </button>
+              ))}
+              {['*', '1', '2', '3'].map(btn => (
+                <button
+                  key={btn}
+                  onClick={() => handleCalcInput(btn)}
+                  className={`p-3 rounded-lg text-sm font-bold transition-colors ${btn === '*' ? 'bg-gray-100 text-gray-700 hover:bg-gray-200' : 'bg-white border border-gray-200 text-gray-700 hover:bg-gray-50'}`}
+                >
+                  {btn}
+                </button>
+              ))}
+              {['-', '0', '.', '+'].map(btn => (
+                <button
+                  key={btn}
+                  onClick={() => handleCalcInput(btn)}
+                  className={`p-3 rounded-lg text-sm font-bold transition-colors ${['+', '-', '*'].includes(btn) ? 'bg-forty-primary text-white hover:bg-forty-primary/90' : 'bg-white border border-gray-200 text-gray-700 hover:bg-gray-50'}`}
+                >
+                  {btn}
+                </button>
+              ))}
+              <button
+                onClick={() => handleCalcInput('=')}
+                className="p-3 rounded-lg text-sm font-bold bg-forty-dark text-white hover:bg-black transition-colors col-span-4"
+              >
+                =
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </PageWrapper>
   )
 }
