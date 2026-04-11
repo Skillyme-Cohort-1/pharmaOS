@@ -165,31 +165,31 @@ export default function POSView() {
 
         {/* Right Section: Transaction Panel */}
         <div className="w-full xl:w-[500px] flex flex-col shrink-0">
-          <div className="flex flex-col h-full bg-white border border-gray-100 rounded-xl shadow-sm overflow-hidden">
+          <div className="flex flex-col bg-white border border-gray-100 rounded-xl shadow-sm overflow-hidden" style={{ maxHeight: 'calc(100vh - 120px)' }}>
             {/* Quick Actions & Header */}
-            <div className="p-4 border-b border-gray-100">
+            <div className="p-4 border-b border-gray-100 shrink-0">
                <div className="flex items-center justify-between mb-4">
                   <h3 className="text-sm font-bold text-gray-800">Quick Action</h3>
                   <div className="flex gap-1.5">
-                    <button 
+                    <button
                       onClick={() => navigate('/stock/current')}
                       className="px-3 py-2 bg-white border border-gray-200 rounded text-xs font-bold text-gray-500 hover:bg-gray-50 transition-colors"
                     >
                       Stock List
                     </button>
-                    <button 
+                    <button
                       onClick={() => navigate('/sales')}
                       className="px-3 py-2 bg-white border border-gray-200 rounded text-xs font-bold text-gray-500 hover:bg-gray-50 transition-colors"
                     >
                       Today Sales
                     </button>
-                    <button 
+                    <button
                       onClick={() => setShowCalculator(true)}
                       className="p-2 bg-white border border-gray-200 rounded text-gray-500 hover:bg-gray-50 transition-colors"
                     >
                       <Calculator size={16} />
                     </button>
-                    <button 
+                    <button
                       onClick={() => { if (confirm('Are you sure you want to logout?')) logout() }}
                       className="p-2 bg-white border border-gray-200 rounded text-red-500 hover:bg-red-50 transition-colors"
                     >
@@ -212,7 +212,7 @@ export default function POSView() {
                     </select>
                     <ChevronDown size={18} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
                   </div>
-                  <button 
+                  <button
                     onClick={() => navigate('/customers')}
                     className="p-2.5 bg-forty-dark text-white rounded-lg hover:bg-black transition-colors shadow-sm"
                     title="Add New Customer"
@@ -222,8 +222,14 @@ export default function POSView() {
                </div>
             </div>
 
-            {/* Transaction Table */}
-            <div className="flex-1 overflow-auto custom-scrollbar">
+            {/* Transaction Table - Min height for 5 items, expands up to max */}
+            <div 
+              className="overflow-auto custom-scrollbar shrink-0"
+              style={{ 
+                minHeight: '280px',
+                maxHeight: cart.length > 5 ? '420px' : 'auto'
+              }}
+            >
               <table className="w-full text-left border-collapse">
                 <thead className="sticky top-0 bg-white z-10">
                   <tr className="border-b border-gray-100">
@@ -280,7 +286,7 @@ export default function POSView() {
             </div>
 
             {/* Billing Section */}
-            <div className="p-4 border-t border-gray-100">
+            <div className="p-4 border-t border-gray-100 shrink-0">
               {/* Total Summary - Full Width */}
               <div className="mb-4 p-3 bg-gray-50 border border-gray-100 rounded-xl text-center">
                 <p className="text-sm font-black text-gray-800">Total</p>
@@ -358,7 +364,7 @@ export default function POSView() {
             </div>
 
             {/* Final Footer Buttons */}
-            <div className="grid grid-cols-3 gap-3 p-4 bg-gray-50 border-t border-gray-100">
+            <div className="grid grid-cols-3 gap-3 p-4 bg-gray-50 border-t border-gray-100 shrink-0">
                <button 
                 onClick={() => { setCart([]); setReceiveAmount(0); setDiscount(0); setDeliveryCost(0); }}
                 className="py-3 bg-white border border-[#FF6565] text-[#FF6565] rounded-lg text-xs font-black uppercase hover:bg-red-50 transition-colors"
