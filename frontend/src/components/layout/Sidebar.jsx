@@ -205,12 +205,18 @@ export default function Sidebar({ isOpen, onClose }) {
         {/* User / Sign Out Profile */}
         <div className="p-4 border-t border-white/5">
           <div className={`flex items-center gap-3 px-4 py-3 mb-4 ${!isOpen ? 'lg:justify-center lg:px-0' : ''}`}>
-            <div className="w-10 h-10 rounded-full bg-forty-primary/20 text-forty-primary flex items-center justify-center shrink-0">
-              <UserSquare2 size={24} />
+            <div className="w-10 h-10 rounded-full bg-forty-primary flex items-center justify-center shrink-0 text-sm font-bold text-white uppercase">
+              {user?.name
+                ? user.name.trim().split(' ').map(w => w[0]).join('').slice(0, 2)
+                : (user?.email?.[0] ?? '?').toUpperCase()}
             </div>
             <div className={`transition-opacity duration-300 ${!isOpen ? 'lg:opacity-0 lg:hidden' : 'opacity-100'}`}>
-              <p className="text-sm font-bold text-white leading-none mb-1">Demo Pharmacy</p>
-              <p className="text-xs text-gray-500">Admin Account</p>
+              <p className="text-sm font-bold text-white leading-none mb-1">
+                {user?.name || user?.email || 'User'}
+              </p>
+              <p className="text-xs text-gray-500">
+                {user?.userType?.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, c => c.toUpperCase()) || ''}
+              </p>
             </div>
           </div>
           <button

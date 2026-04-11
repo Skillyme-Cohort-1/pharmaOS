@@ -43,32 +43,32 @@ async function main() {
   // Create users for all roles
   const users = await Promise.all([
     // SUPER_ADMIN (2)
-    prisma.user.create({ data: { email: 'superadmin1@pharmaos.com', password: passwordHash, userType: 'SUPER_ADMIN', isActive: true } }),
-    prisma.user.create({ data: { email: 'superadmin2@pharmaos.com', password: passwordHash, userType: 'SUPER_ADMIN', isActive: true } }),
+    prisma.user.create({ data: { email: 'superadmin1@pharmaos.com', name: 'Alice Kamau', password: passwordHash, userType: 'SUPER_ADMIN', isActive: true } }),
+    prisma.user.create({ data: { email: 'superadmin2@pharmaos.com', name: 'Brian Otieno', password: passwordHash, userType: 'SUPER_ADMIN', isActive: true } }),
     
     // ADMIN (2)
-    prisma.user.create({ data: { email: 'admin1@pharmaos.com', password: passwordHash, userType: 'ADMIN', isActive: true } }),
-    prisma.user.create({ data: { email: 'admin2@pharmaos.com', password: passwordHash, userType: 'ADMIN', isActive: true } }),
+    prisma.user.create({ data: { email: 'admin1@pharmaos.com', name: 'Carol Wanjiku', password: passwordHash, userType: 'ADMIN', isActive: true } }),
+    prisma.user.create({ data: { email: 'admin2@pharmaos.com', name: 'David Mwangi', password: passwordHash, userType: 'ADMIN', isActive: true } }),
     
     // FINANCE (1)
-    prisma.user.create({ data: { email: 'finance@pharmaos.com', password: passwordHash, userType: 'FINANCE', isActive: true } }),
+    prisma.user.create({ data: { email: 'finance@pharmaos.com', name: 'Eve Akinyi', password: passwordHash, userType: 'FINANCE', isActive: true } }),
     
     // RECEIVING_BAY (1)
-    prisma.user.create({ data: { email: 'receiving@pharmaos.com', password: passwordHash, userType: 'RECEIVING_BAY', isActive: true } }),
+    prisma.user.create({ data: { email: 'receiving@pharmaos.com', name: 'Frank Kipchoge', password: passwordHash, userType: 'RECEIVING_BAY', isActive: true } }),
     
     // MANAGER (1)
-    prisma.user.create({ data: { email: 'manager@pharmaos.com', password: passwordHash, userType: 'MANAGER', isActive: true } }),
+    prisma.user.create({ data: { email: 'manager@pharmaos.com', name: 'Grace Chebet', password: passwordHash, userType: 'MANAGER', isActive: true } }),
     
     // DISPATCH (1)
-    prisma.user.create({ data: { email: 'dispatch@pharmaos.com', password: passwordHash, userType: 'DISPATCH', isActive: true } }),
+    prisma.user.create({ data: { email: 'dispatch@pharmaos.com', name: 'Henry Mutua', password: passwordHash, userType: 'DISPATCH', isActive: true } }),
     
     // RIDER (1)
-    prisma.user.create({ data: { email: 'rider@pharmaos.com', password: passwordHash, userType: 'RIDER', isActive: true } }),
+    prisma.user.create({ data: { email: 'rider@pharmaos.com', name: 'Isaac Njoroge', password: passwordHash, userType: 'RIDER', isActive: true } }),
     
     // PHARMACIST (3 - for pharmacist linking)
-    prisma.user.create({ data: { email: 'pharmacist1@pharmaos.com', password: passwordHash, userType: 'PHARMACIST', isActive: true } }),
-    prisma.user.create({ data: { email: 'pharmacist2@pharmaos.com', password: passwordHash, userType: 'PHARMACIST', isActive: true } }),
-    prisma.user.create({ data: { email: 'pharmacist3@pharmaos.com', password: passwordHash, userType: 'PHARMACIST', isActive: true } }),
+    prisma.user.create({ data: { email: 'pharmacist1@pharmaos.com', name: 'Jane Adhiambo', password: passwordHash, userType: 'PHARMACIST', isActive: true } }),
+    prisma.user.create({ data: { email: 'pharmacist2@pharmaos.com', name: 'Kevin Wekesa', password: passwordHash, userType: 'PHARMACIST', isActive: true } }),
+    prisma.user.create({ data: { email: 'pharmacist3@pharmaos.com', name: 'Linda Njeri', password: passwordHash, userType: 'PHARMACIST', isActive: true } }),
   ])
   
   console.log(`✅ Created ${users.length} users with various roles`)
@@ -299,24 +299,26 @@ async function main() {
 
   // ===== EXPENSES =====
   await Promise.all([
-    prisma.expense.create({ data: { category: 'Rent', amount: 45000.00, date: daysAgo(1), notes: 'Monthly pharmacy rent' } }),
-    prisma.expense.create({ data: { category: 'Utilities', amount: 8500.00, date: daysAgo(3), notes: 'Electricity and water' } }),
-    prisma.expense.create({ data: { category: 'Salaries', amount: 120000.00, date: daysAgo(5), notes: 'Staff salaries - pharmacists' } }),
-    prisma.expense.create({ data: { category: 'Transport', amount: 3500.00, date: daysAgo(7), notes: 'Delivery van fuel' } }),
-    prisma.expense.create({ data: { category: 'Insurance', amount: 15000.00, date: daysAgo(10), notes: 'Business insurance premium' } }),
-    prisma.expense.create({ data: { category: 'Maintenance', amount: 5000.00, date: daysAgo(15), notes: 'Refrigerator repair' } }),
-    prisma.expense.create({ data: { category: 'Licenses', amount: 12000.00, date: daysAgo(20), notes: 'Pharmacy board license renewal' } }),
-    prisma.expense.create({ data: { category: 'Marketing', amount: 2000.00, date: daysAgo(25), notes: 'Social media advertising' } }),
+    prisma.expense.create({ data: { category: 'Rent', amount: 8000.00, date: daysAgo(1), notes: 'Monthly pharmacy rent' } }),
+    prisma.expense.create({ data: { category: 'Utilities', amount: 2500.00, date: daysAgo(3), notes: 'Electricity and water' } }),
+    prisma.expense.create({ data: { category: 'Salaries', amount: 12000.00, date: daysAgo(5), notes: 'Staff salaries - pharmacists' } }),
+    prisma.expense.create({ data: { category: 'Transport', amount: 1500.00, date: daysAgo(7), notes: 'Delivery van fuel' } }),
+    prisma.expense.create({ data: { category: 'Insurance', amount: 3000.00, date: daysAgo(10), notes: 'Business insurance premium' } }),
+    prisma.expense.create({ data: { category: 'Maintenance', amount: 1200.00, date: daysAgo(15), notes: 'Refrigerator repair' } }),
+    prisma.expense.create({ data: { category: 'Licenses', amount: 2000.00, date: daysAgo(20), notes: 'Pharmacy board license renewal' } }),
+    prisma.expense.create({ data: { category: 'Marketing', amount: 800.00, date: daysAgo(25), notes: 'Social media advertising' } }),
   ])
   console.log('✅ Created 8 expenses')
 
   // ===== INCOMES =====
   await Promise.all([
-    prisma.income.create({ data: { category: 'Consultation', amount: 5000.00, date: daysAgo(2), notes: 'Pharmacist consultation fees' } }),
-    prisma.income.create({ data: { category: 'Delivery', amount: 1500.00, date: daysAgo(8), notes: 'Home delivery charges collected' } }),
-    prisma.income.create({ data: { category: 'Services', amount: 3000.00, date: daysAgo(14), notes: 'Blood pressure monitoring service' } }),
+    prisma.income.create({ data: { category: 'Consultation', amount: 8500.00, date: daysAgo(2), notes: 'Pharmacist consultation fees' } }),
+    prisma.income.create({ data: { category: 'Delivery', amount: 3200.00, date: daysAgo(8), notes: 'Home delivery charges collected' } }),
+    prisma.income.create({ data: { category: 'Services', amount: 6800.00, date: daysAgo(14), notes: 'Blood pressure monitoring service' } }),
+    prisma.income.create({ data: { category: 'Consultation', amount: 4500.00, date: daysAgo(20), notes: 'Health screening services' } }),
+    prisma.income.create({ data: { category: 'Delivery', amount: 2100.00, date: daysAgo(27), notes: 'Medical supply delivery' } }),
   ])
-  console.log('✅ Created 3 incomes')
+  console.log('✅ Created 5 incomes')
 
   // ===== SETTINGS =====
   await Promise.all([

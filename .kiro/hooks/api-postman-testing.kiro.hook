@@ -1,14 +1,16 @@
 {
   "enabled": true,
   "name": "API Postman Testing",
-  "description": "Monitors API source code changes in the backend and automatically runs Postman collection tests to validate functionality",
+  "description": "Monitors API source code and schema changes and automatically runs Postman collection tests to validate functionality",
   "version": "1",
   "when": {
     "type": "fileEdited",
     "patterns": [
-      "backend/src/**/*.js",
+      "backend/src/routes/*.js",
+      "backend/src/controllers/*.js",
+      "backend/src/middleware/schemas.js",
       "backend/prisma/schema.prisma",
-      "backend/package.json"
+      "backend/src/app.js"
     ]
   },
   "then": {

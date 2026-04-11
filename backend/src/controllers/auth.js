@@ -45,6 +45,7 @@ export async function login(req, res, next) {
         token,
         user: {
           id: user.id,
+          name: user.name,
           email: user.email,
           userType: user.userType,
           isActive: user.isActive,

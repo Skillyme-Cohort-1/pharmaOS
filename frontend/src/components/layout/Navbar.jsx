@@ -1,8 +1,29 @@
 import { Bell, Menu, Search, ChevronDown, Globe } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 
+// Format userType enum to a readable label
+function formatRole(userType) {
+  if (!userType) return ''
+  return userType
+    .replace(/_/g, ' ')
+    .toLowerCase()
+    .replace(/\b\w/g, c => c.toUpperCase())
+}
+
+// Get initials from name or fall back to email
+function getInitials(name, email) {
+  if (name && name.trim()) {
+    return name.trim().split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()
+  }
+  return (email || '?')[0].toUpperCase()
+}
+
 export default function Navbar({ onMenuClick }) {
   const { user } = useAuth()
+
+  const displayName = user?.name || user?.email || 'User'
+  const role = formatRole(user?.userType)
+  const initials = getInitials(user?.name, user?.email)
 
   return (
     <header className="sticky top-0 z-30 w-full h-16 bg-forty-primary text-white flex items-center justify-between px-4 lg:px-8 shadow-md">
@@ -48,11 +69,11 @@ export default function Navbar({ onMenuClick }) {
         {/* Profile */}
         <button className="flex items-center gap-2 pl-2 pr-1 py-1 rounded-full hover:bg-white/10 transition-colors">
           <div className="text-right hidden sm:block">
-            <p className="text-xs font-bold leading-none">Demo Pharmacy</p>
-            <p className="text-[10px] text-white/70">Admin</p>
+            <p className="text-xs font-bold leading-none">{displayName}</p>
+            <p className="text-[10px] text-white/70">{role}</p>
           </div>
           <div className="w-9 h-9 rounded-full bg-white/20 flex items-center justify-center text-sm font-bold uppercase overflow-hidden border border-white/30">
-            DP
+            {initials}
           </div>
           <ChevronDown size={14} className="text-white/70" />
         </button>

@@ -190,6 +190,7 @@ model Setting {
 model User {
   id           String    @id @default(uuid())
   email        String    @unique
+  name         String    @default("")
   password     String
   userType     UserType  @default(ADMIN)
   isActive     Boolean   @default(true)

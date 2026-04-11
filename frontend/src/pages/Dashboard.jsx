@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Package, Users, UserSquare2, AlertTriangle, TrendingUp, TrendingDown, MoreHorizontal, ShoppingCart } from 'lucide-react'
+import { Package, Users, UserSquare2, AlertTriangle, TrendingUp, TrendingDown, MoreHorizontal, ShoppingCart, Lock } from 'lucide-react'
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, LineChart, Line, CartesianGrid
@@ -9,6 +9,17 @@ import Card from '../components/ui/Card'
 import { formatCurrency } from '../utils/formatCurrency'
 import { productsApi, ordersApi, analyticsApi } from '../services/api'
 import { useTopCustomers } from '../hooks/useCustomers'
+
+// Access Denied Component
+function AccessDenied() {
+  return (
+    <div className="flex flex-col items-center justify-center h-[200px] text-gray-400">
+      <Lock size={32} className="mb-2" />
+      <p className="text-sm font-medium">Access Denied</p>
+      <p className="text-xs mt-1">You don't have permission to view this data</p>
+    </div>
+  )
+}
 
 // --- Dashboard Component ---
 
@@ -42,6 +53,12 @@ export default function Dashboard() {
     purchaseTrend: [],
     dashboardKPIs: null,
   })
+  const [permissions, setPermissions] = useState({
+    analytics: true,
+    products: true,
+    orders: true,
+    customers: true,
+  })
   const [loading, setLoading] = useState(true)
   const { customers: topCustomers } = useTopCustomers()
 
@@ -52,7 +69,8 @@ export default function Dashboard() {
   const fetchData = async () => {
     setLoading(true)
     try {
-      const [productsRes, ordersRes, trendRes, profitLossRes, revenueRes, dashboardRes] = await Promise.all([
+      // Fetch each endpoint individually to handle 403s gracefully
+      const results = await Promise.allSettled([
         productsApi.getAll({}),
         ordersApi.getAll({}),
         analyticsApi.sales(30),
@@ -61,14 +79,36 @@ export default function Dashboard() {
         analyticsApi.dashboard(),
       ])
 
-      const products = productsRes.data || []
-      const profitLoss = profitLossRes.data || []
-      const revenue = revenueRes.data || {}
+      const [productsRes, ordersRes, trendRes, profitLossRes, revenueRes, dashboardRes] = results
+
+      // Track permissions
+      const newPermissions = {
+        analytics: true,
+        products: true,
+        orders: true,
+        customers: true,
+      }
+
+      // Helper: any rejection means no access for that section
+      const isRejected = (result) => result.status === 'rejected'
+
+      // Check permissions
+      if (isRejected(productsRes)) newPermissions.products = false
+      if (isRejected(ordersRes)) newPermissions.orders = false
+      if (isRejected(trendRes) || isRejected(profitLossRes) || isRejected(revenueRes) || isRejected(dashboardRes)) {
+        newPermissions.analytics = false
+      }
+
+      setPermissions(newPermissions)
+
+      // Extract data or use defaults
+      const products = productsRes.status === 'fulfilled' ? (productsRes.value.data || []) : []
+      const profitLoss = profitLossRes.status === 'fulfilled' ? (profitLossRes.value.data || []) : []
+      const revenue = revenueRes.status === 'fulfilled' ? (revenueRes.value.data || {}) : {}
+      const salesTrend = trendRes.status === 'fulfilled' ? (trendRes.value.data?.data || []) : []
+      const dashboardKPIs = dashboardRes.status === 'fulfilled' ? (dashboardRes.value.data || null) : null
 
       // Build purchase trend data for sales & purchase chart
-      const salesTrend = trendRes.data?.data || []
-
-      // Create combined sales vs purchase chart data (mock purchase trend matched to sales dates)
       const salesPurchaseData = salesTrend.map(d => ({
         day: d.formattedDate.split(' ')[1] || d.formattedDate,
         sales: d.amount,
@@ -91,7 +131,7 @@ export default function Dashboard() {
         revenue,
         salesPurchaseData,
         reportData,
-        dashboardKPIs: dashboardRes.data || null,
+        dashboardKPIs,
       })
     } catch (err) {
       console.error('Failed to fetch dashboard data', err)
@@ -111,32 +151,32 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         <MetricCard
           title="Total Customers"
-          value={kpis.totalCustomers || 0}
-          trend="+0 Today"
+          value={permissions.analytics ? (kpis.totalCustomers || 0) : '—'}
+          trend={permissions.analytics ? "+0 Today" : "Restricted"}
           icon={Users}
           colorClass="text-forty-accent"
           iconBg="bg-forty-accent/10"
         />
         <MetricCard
           title="Total Suppliers"
-          value={kpis.totalSuppliers || 0}
-          trend="+0 Today"
+          value={permissions.analytics ? (kpis.totalSuppliers || 0) : '—'}
+          trend={permissions.analytics ? "+0 Today" : "Restricted"}
           icon={UserSquare2}
           colorClass="text-forty-primary"
           iconBg="bg-forty-primary/10"
         />
         <MetricCard
           title="Stock Medicine"
-          value={kpis.stockMedicine || 0}
-          trend="+0 Today"
+          value={permissions.products ? (kpis.stockMedicine || 0) : '—'}
+          trend={permissions.products ? "+0 Today" : "Restricted"}
           icon={Package}
           colorClass="text-blue-500"
           iconBg="bg-blue-500/10"
         />
         <MetricCard
           title="Expired Medicine"
-          value={kpis.expiredCount || 0}
-          trend="+0 Today"
+          value={permissions.products ? (kpis.expiredCount || 0) : '—'}
+          trend={permissions.products ? "+0 Today" : "Restricted"}
           icon={AlertTriangle}
           colorClass="text-forty-red"
           iconBg="bg-forty-red/10"
@@ -148,58 +188,93 @@ export default function Dashboard() {
         {/* Profit / Loss Bar Chart */}
         <Card title="Monthly Profit / Loss" className="lg:col-span-2 shadow-sm border-none">
           <div className="h-[300px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={profitLoss}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
-                <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{fill: '#9ca3af', fontSize: 12}} />
-                <YAxis axisLine={false} tickLine={false} tick={{fill: '#9ca3af', fontSize: 12}} />
-                <Tooltip cursor={{fill: '#f9fafb'}} contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'}} formatter={(value) => formatCurrency(value)} />
-                <Bar dataKey="revenue" fill="#8231D3" radius={[4, 4, 0, 0]} barSize={20} name="Revenue" />
-                <Bar dataKey="cost" fill="#FFB444" radius={[4, 4, 0, 0]} barSize={20} name="Cost" />
-              </BarChart>
-            </ResponsiveContainer>
+            {permissions.analytics ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={profitLoss}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
+                  <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{fill: '#9ca3af', fontSize: 12}} />
+                  <YAxis axisLine={false} tickLine={false} tick={{fill: '#9ca3af', fontSize: 12}} />
+                  <Tooltip cursor={{fill: '#f9fafb'}} contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'}} formatter={(value) => formatCurrency(value)} />
+                  <Bar dataKey="revenue" fill="#8231D3" radius={[4, 4, 0, 0]} barSize={20} name="Revenue" />
+                  <Bar dataKey="cost" fill="#FFB444" radius={[4, 4, 0, 0]} barSize={20} name="Cost" />
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <AccessDenied />
+            )}
           </div>
         </Card>
 
         {/* Overall Report Donut Chart */}
         <Card title="Revenue Breakdown" className="shadow-sm border-none">
-          <div className="h-[240px] relative">
-            {reportData.length > 0 ? (
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={reportData}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={60}
-                    outerRadius={80}
-                    paddingAngle={5}
-                    dataKey="value"
+          {permissions.analytics ? (
+            <>
+              {/* Legend — above the chart for clear visibility */}
+              <div className="grid grid-cols-3 gap-2 mb-4">
+                {reportData.length > 0 ? reportData.map((item) => (
+                  <div
+                    key={item.name}
+                    className="flex flex-col gap-1 px-3 py-2 rounded-lg"
+                    style={{ backgroundColor: `${item.color}12` }}
                   >
-                    {reportData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
-                  </Pie>
-                  <Tooltip formatter={(value) => formatCurrency(value)} />
-                </PieChart>
-              </ResponsiveContainer>
-            ) : (
-              <div className="flex items-center justify-center h-full text-gray-400 text-sm">No data</div>
-            )}
-            <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-              <p className="text-2xl font-bold text-gray-900">{formatCurrency(data.revenue.net || 0)}</p>
-              <p className="text-xs text-gray-400">Net Revenue</p>
-            </div>
-          </div>
-          {/* Legend */}
-          <div className="grid grid-cols-2 gap-4 mt-4">
-            {reportData.map((item) => (
-              <div key={item.name} className="flex items-center gap-2">
-                <div className="w-2 h-2 rounded-full" style={{ backgroundColor: item.color }} />
-                <span className="text-xs text-gray-500 font-medium">{item.name}</span>
+                    <div className="flex items-center gap-1.5">
+                      <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: item.color }} />
+                      <span className="text-[10px] font-semibold text-gray-500 uppercase tracking-wide truncate">{item.name}</span>
+                    </div>
+                    <p className="text-sm font-bold text-gray-800 truncate">{formatCurrency(item.value)}</p>
+                  </div>
+                )) : (
+                  <div className="col-span-3 text-xs text-gray-400 text-center py-1">No data available</div>
+                )}
               </div>
-            ))}
-          </div>
+
+              {/* Donut chart */}
+              <div className="h-[200px] relative">
+                {reportData.length > 0 ? (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={reportData}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={58}
+                        outerRadius={78}
+                        paddingAngle={4}
+                        dataKey="value"
+                        strokeWidth={0}
+                      >
+                        {reportData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.color} />
+                        ))}
+                      </Pie>
+                      <Tooltip
+                        formatter={(value) => formatCurrency(value)}
+                        contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)', fontSize: '12px' }}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="flex items-center justify-center h-full text-gray-400 text-sm">No data</div>
+                )}
+                {/* Center label */}
+                <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                  {data.revenue.net >= 0 ? (
+                    <>
+                      <p className="text-xl font-bold text-gray-900 leading-tight">{formatCurrency(data.revenue.net || 0)}</p>
+                      <p className="text-[10px] text-gray-400 font-medium mt-0.5">Net Revenue</p>
+                    </>
+                  ) : (
+                    <>
+                      <p className="text-xl font-bold text-red-500 leading-tight">{formatCurrency(Math.abs(data.revenue.net))}</p>
+                      <p className="text-[10px] text-red-400 font-medium mt-0.5">Net Loss</p>
+                    </>
+                  )}
+                </div>
+              </div>
+            </>
+          ) : (
+            <AccessDenied />
+          )}
         </Card>
       </div>
 
@@ -208,52 +283,60 @@ export default function Dashboard() {
         {/* Sales & Purchase Trends */}
         <Card title="Sales & Purchase" className="lg:col-span-2 shadow-sm border-none">
           <div className="h-[300px]">
-            {salesPurchaseData.length > 0 ? (
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={salesPurchaseData}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
-                  <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{fill: '#9ca3af', fontSize: 12}} />
-                  <YAxis axisLine={false} tickLine={false} tick={{fill: '#9ca3af', fontSize: 12}} />
-                  <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'}} formatter={(value) => formatCurrency(value)} />
-                  <Line type="monotone" dataKey="sales" stroke="#8231D3" strokeWidth={3} dot={false} name="Sales" />
-                  <Line type="monotone" dataKey="purchase" stroke="#00987F" strokeWidth={3} dot={false} name="Purchases" />
-                </LineChart>
-              </ResponsiveContainer>
+            {permissions.analytics ? (
+              salesPurchaseData.length > 0 ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={salesPurchaseData}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
+                    <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{fill: '#9ca3af', fontSize: 12}} />
+                    <YAxis axisLine={false} tickLine={false} tick={{fill: '#9ca3af', fontSize: 12}} />
+                    <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'}} formatter={(value) => formatCurrency(value)} />
+                    <Line type="monotone" dataKey="sales" stroke="#8231D3" strokeWidth={3} dot={false} name="Sales" />
+                    <Line type="monotone" dataKey="purchase" stroke="#00987F" strokeWidth={3} dot={false} name="Purchases" />
+                  </LineChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="flex items-center justify-center h-full text-gray-400 text-sm">No data</div>
+              )
             ) : (
-              <div className="flex items-center justify-center h-full text-gray-400 text-sm">No data</div>
+              <AccessDenied />
             )}
           </div>
         </Card>
 
         {/* Low Stock Table */}
-        <Card 
-          title="Low Stock" 
-          subtitle="Total Summary" 
+        <Card
+          title="Low Stock"
+          subtitle="Total Summary"
           action={<button className="text-xs text-forty-primary font-bold">View All</button>}
           className="shadow-sm border-none"
         >
-          <div className="overflow-x-auto">
-            <table className="w-full text-left">
-              <thead>
-                <tr className="border-b border-gray-50">
-                  <th className="py-3 text-[10px] font-bold text-gray-400 uppercase tracking-wider">Medicine Name</th>
-                  <th className="py-3 text-[10px] font-bold text-gray-400 uppercase tracking-wider">Batch</th>
-                  <th className="py-3 text-[10px] font-bold text-gray-400 uppercase tracking-wider text-right">Qty</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-50">
-                {data.lowStock.length > 0 ? data.lowStock.map((item) => (
-                  <tr key={item.id} className="group hover:bg-gray-50/50 transition-colors">
-                    <td className="py-3 text-sm font-medium text-gray-700">{item.name}</td>
-                    <td className="py-3 text-xs text-gray-400">NZ421</td>
-                    <td className="py-3 text-sm font-bold text-red-500 text-right">{item.quantity}</td>
+          {permissions.products ? (
+            <div className="overflow-x-auto">
+              <table className="w-full text-left">
+                <thead>
+                  <tr className="border-b border-gray-50">
+                    <th className="py-3 text-[10px] font-bold text-gray-400 uppercase tracking-wider">Medicine Name</th>
+                    <th className="py-3 text-[10px] font-bold text-gray-400 uppercase tracking-wider">Batch</th>
+                    <th className="py-3 text-[10px] font-bold text-gray-400 uppercase tracking-wider text-right">Qty</th>
                   </tr>
-                )) : (
-                  <tr><td colSpan="3" className="py-4 text-center text-xs text-gray-400">No low stock items</td></tr>
-                )}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody className="divide-y divide-gray-50">
+                  {data.lowStock.length > 0 ? data.lowStock.map((item) => (
+                    <tr key={item.id} className="group hover:bg-gray-50/50 transition-colors">
+                      <td className="py-3 text-sm font-medium text-gray-700">{item.name}</td>
+                      <td className="py-3 text-xs text-gray-400">NZ421</td>
+                      <td className="py-3 text-sm font-bold text-red-500 text-right">{item.quantity}</td>
+                    </tr>
+                  )) : (
+                    <tr><td colSpan="3" className="py-4 text-center text-xs text-gray-400">No low stock items</td></tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <AccessDenied />
+          )}
         </Card>
       </div>
 
@@ -261,44 +344,52 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {/* Top 5 Products */}
         <Card title="Top 5 Product" className="shadow-sm border-none">
-          <div className="space-y-4">
-            {data.products.slice(0, 5).map((product) => (
-              <div key={product.id} className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-gray-100 flex-shrink-0 overflow-hidden">
-                  <div className="w-full h-full bg-gradient-to-br from-forty-accent/20 to-forty-primary/20 flex items-center justify-center">
-                    <Package size={20} className="text-gray-400" />
+          {permissions.products ? (
+            <div className="space-y-4">
+              {data.products.slice(0, 5).map((product) => (
+                <div key={product.id} className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-lg bg-gray-100 flex-shrink-0 overflow-hidden">
+                    <div className="w-full h-full bg-gradient-to-br from-forty-accent/20 to-forty-primary/20 flex items-center justify-center">
+                      <Package size={20} className="text-gray-400" />
+                    </div>
                   </div>
+                  <div className="flex-1 min-w-0">
+                    <h4 className="text-sm font-bold text-gray-900 truncate">{product.name}</h4>
+                    <p className="text-[10px] text-gray-400">Batch: NZ421  |  Price: {formatCurrency(product.unitPrice)}</p>
+                  </div>
+                  <button className="p-1 text-gray-300 hover:text-gray-600"><MoreHorizontal size={16} /></button>
                 </div>
-                <div className="flex-1 min-w-0">
-                  <h4 className="text-sm font-bold text-gray-900 truncate">{product.name}</h4>
-                  <p className="text-[10px] text-gray-400">Batch: NZ421  |  Price: {formatCurrency(product.unitPrice)}</p>
-                </div>
-                <button className="p-1 text-gray-300 hover:text-gray-600"><MoreHorizontal size={16} /></button>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          ) : (
+            <AccessDenied />
+          )}
         </Card>
 
         {/* Top 5 Customers */}
         <Card title="Top 5 Customer" className="shadow-sm border-none">
-          <div className="space-y-4">
-            {topCustomers.length > 0 ? topCustomers.map((customer, idx) => (
-              <div key={customer.id} className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-forty-accent/10 text-forty-accent flex items-center justify-center font-bold text-sm">
-                  {customer.name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()}
+          {permissions.customers ? (
+            <div className="space-y-4">
+              {topCustomers.length > 0 ? topCustomers.map((customer, idx) => (
+                <div key={customer.id} className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-forty-accent/10 text-forty-accent flex items-center justify-center font-bold text-sm">
+                    {customer.name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h4 className="text-sm font-bold text-gray-900 truncate">{customer.name}</h4>
+                    <p className="text-[10px] text-gray-400">{customer.phone} · {formatCurrency(customer.totalSpent)}</p>
+                  </div>
+                  <button className="p-1 text-gray-300 hover:text-gray-600"><MoreHorizontal size={16} /></button>
                 </div>
-                <div className="flex-1 min-w-0">
-                  <h4 className="text-sm font-bold text-gray-900 truncate">{customer.name}</h4>
-                  <p className="text-[10px] text-gray-400">{customer.phone} · {formatCurrency(customer.totalSpent)}</p>
+              )) : (
+                <div className="text-center py-8">
+                  <p className="text-xs text-gray-400 font-medium">No customer data yet</p>
                 </div>
-                <button className="p-1 text-gray-300 hover:text-gray-600"><MoreHorizontal size={16} /></button>
-              </div>
-            )) : (
-              <div className="text-center py-8">
-                <p className="text-xs text-gray-400 font-medium">No customer data yet</p>
-              </div>
-            )}
-          </div>
+              )}
+            </div>
+          ) : (
+            <AccessDenied />
+          )}
         </Card>
 
         {/* Expired Products */}
