@@ -15,6 +15,7 @@ import Incomes from './pages/Incomes'
 import DueList from './pages/DueList'
 import Tax from './pages/Tax'
 import Settings from './pages/Settings'
+import StockList from './pages/StockList'
 import ListTemplate from './components/templates/ListTemplate'
 import FormTemplate, { FormField, FormInput, FormSelect } from './components/templates/FormTemplate'
 import Badge from './components/ui/Badge'
@@ -94,22 +95,16 @@ function App() {
 
             {/* Stock List */}
             <Route path="/stock/current" element={<ProtectedRoute>
-              <ListTemplate
-                title="Current Stock"
-                subtitle="All available medicine inventory"
-                storageKey="stock_current"
-                columns={COLS.PRODUCTS}
-                initialData={[]}
-              />
+              <StockList filter="current" />
             </ProtectedRoute>} />
             <Route path="/stock/expired" element={<ProtectedRoute>
-              <ListTemplate
-                title="Expired Stock"
-                subtitle="Items past their expiry dates"
-                storageKey="stock_expired"
-                columns={COLS.PRODUCTS}
-                initialData={[]}
-              />
+              <StockList filter="expired" />
+            </ProtectedRoute>} />
+            <Route path="/stock/low" element={<ProtectedRoute>
+              <StockList filter="low" />
+            </ProtectedRoute>} />
+            <Route path="/stock/outofstock" element={<ProtectedRoute>
+              <StockList filter="outofstock" />
             </ProtectedRoute>} />
 
             {/* Fallback */}

@@ -111,7 +111,7 @@ export default function OrderModal({ isOpen, onClose, order, onSuccess }) {
             <p className="text-gray-500">{formData.customerPhone}</p>
           </div>
 
-          <div className="grid grid-cols-2 gap-y-4 gap-x-8 bg-gray-50 p-4 rounded-xl border border-gray-100">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-4 gap-x-8 bg-gray-50 p-4 rounded-xl border border-gray-100">
             <div>
               <p className="text-xs font-semibold text-gray-500 uppercase">Product</p>
               <p className="text-base font-medium mt-1 text-gray-900">

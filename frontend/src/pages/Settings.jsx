@@ -52,7 +52,7 @@ export default function Settings() {
                   <select
                     value={formData[field.key] ?? settings[field.key] ?? ''}
                     onChange={e => setFormData({...formData, [field.key]: e.target.value})}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-forty-primary"
+                    className="w-full px-3 py-2.5 sm:py-2 border border-gray-200 rounded-md text-base sm:text-sm focus:outline-none focus:ring-1 focus:ring-forty-primary"
                   >
                     {field.options.map(opt => <option key={opt} value={opt}>{opt}</option>)}
                   </select>
@@ -61,7 +61,7 @@ export default function Settings() {
                     type={field.type}
                     value={formData[field.key] ?? settings[field.key] ?? ''}
                     onChange={e => setFormData({...formData, [field.key]: e.target.value})}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-forty-primary"
+                    className="w-full px-3 py-2.5 sm:py-2 border border-gray-200 rounded-md text-base sm:text-sm focus:outline-none focus:ring-1 focus:ring-forty-primary"
                   />
                 )}
               </div>
@@ -74,7 +74,7 @@ export default function Settings() {
             <button
               type="submit"
               disabled={saving}
-              className="px-6 py-2 bg-forty-primary text-white text-sm font-bold rounded hover:bg-forty-primary/90 disabled:opacity-50 transition-colors"
+              className="w-full sm:w-auto px-6 py-2.5 sm:py-2 bg-forty-primary text-white text-sm font-bold rounded hover:bg-forty-primary/90 disabled:opacity-50 transition-colors"
             >
               {saving ? 'Saving...' : 'Save Settings'}
             </button>

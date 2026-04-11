@@ -187,7 +187,7 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
         {/* Profit / Loss Bar Chart */}
         <Card title="Monthly Profit / Loss" className="lg:col-span-2 shadow-sm border-none">
-          <div className="h-[300px]">
+          <div className="h-[220px] sm:h-[300px]">
             {permissions.analytics ? (
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={profitLoss}>
@@ -214,14 +214,14 @@ export default function Dashboard() {
                 {reportData.length > 0 ? reportData.map((item) => (
                   <div
                     key={item.name}
-                    className="flex flex-col gap-1 px-3 py-2 rounded-lg"
+                    className="flex flex-col gap-1 px-2 sm:px-3 py-2 rounded-lg"
                     style={{ backgroundColor: `${item.color}12` }}
                   >
                     <div className="flex items-center gap-1.5">
                       <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: item.color }} />
-                      <span className="text-[10px] font-semibold text-gray-500 uppercase tracking-wide truncate">{item.name}</span>
+                      <span className="text-[9px] sm:text-[10px] font-semibold text-gray-500 uppercase tracking-wide truncate">{item.name}</span>
                     </div>
-                    <p className="text-sm font-bold text-gray-800 truncate">{formatCurrency(item.value)}</p>
+                    <p className="text-xs sm:text-sm font-bold text-gray-800 truncate">{formatCurrency(item.value)}</p>
                   </div>
                 )) : (
                   <div className="col-span-3 text-xs text-gray-400 text-center py-1">No data available</div>
@@ -283,7 +283,7 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
         {/* Sales & Purchase Trends */}
         <Card title="Sales & Purchase" className="lg:col-span-2 shadow-sm border-none">
-          <div className="h-[300px]">
+          <div className="h-[220px] sm:h-[300px]">
             {permissions.analytics ? (
               salesPurchaseData.length > 0 ? (
                 <ResponsiveContainer width="100%" height="100%">

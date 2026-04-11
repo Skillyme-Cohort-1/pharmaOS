@@ -110,7 +110,7 @@ export default function ProductModal({ isOpen, onClose, product, onSuccess }) {
             <p className="text-gray-500">{formData.category || 'Uncategorized'}</p>
           </div>
 
-          <div className="grid grid-cols-2 gap-y-4 gap-x-8 bg-gray-50 p-4 rounded-xl border border-gray-100">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-4 gap-x-8 bg-gray-50 p-4 rounded-xl border border-gray-100">
             <div>
               <p className="text-xs font-semibold text-gray-500 uppercase">Quantity in Stock</p>
               <p className={`text-lg font-medium mt-1 ${formData.quantity < 10 ? 'text-red-600' : 'text-gray-900'}`}>{formData.quantity}</p>

@@ -19,7 +19,7 @@ export default function Modal({ isOpen, onClose, title, children, size = 'md' })
         />
 
         {/* Modal */}
-        <div className={`relative w-full ${sizes[size]} p-4 sm:p-6 my-4 sm:my-8 overflow-hidden text-left align-middle transition-all transform bg-white rounded-lg sm:rounded-2xl shadow-2xl max-h-[85vh] overflow-y-auto`}>
+        <div className={`relative w-full ${sizes[size]} p-4 sm:p-6 my-4 sm:my-8 overflow-hidden text-left align-middle transition-all transform bg-white rounded-lg sm:rounded-2xl shadow-2xl max-h-[90vh] sm:max-h-[85vh] overflow-y-auto`}>
           {/* Header */}
           <div className="flex items-center justify-between mb-4 sm:mb-6 sticky top-0 bg-white z-10">
             <h3 className="text-lg sm:text-xl font-semibold text-gray-900 pr-4 break-words flex-1">{title}</h3>

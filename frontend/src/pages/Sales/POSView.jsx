@@ -74,7 +74,7 @@ export default function POSView() {
 
   return (
     <PageWrapper title="Sale New">
-      <div className="flex flex-col xl:flex-row gap-6 h-[calc(100vh-140px)] min-h-[700px]">
+      <div className="flex flex-col xl:flex-row gap-6 min-h-[700px]">
         
         {/* Left Section: Product Browser */}
         <div className="flex-1 flex flex-col min-w-0 min-h-[400px]">
@@ -232,7 +232,7 @@ export default function POSView() {
                 <p className="text-xl font-black text-gray-900">{formatCurrency(total)}</p>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {/* Left Column - Payment Inputs */}
                 <div className="space-y-3">
                   <div className="flex items-center gap-3">
