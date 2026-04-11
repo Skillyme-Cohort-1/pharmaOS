@@ -1,57 +1,29 @@
 import { useState, useEffect, useCallback } from 'react'
+import { Plus, Search, Edit2, Trash2 } from 'lucide-react'
 import { productsApi } from '../services/api'
-import ListTemplate from '../components/templates/ListTemplate'
-import ProductModal from '../components/forms/ProductModal'
+import { useToast } from '../context/ToastContext'
+import PageWrapper from '../components/layout/PageWrapper'
+import Card from '../components/ui/Card'
 import { formatCurrency } from '../utils/formatCurrency'
 import Badge from '../components/ui/Badge'
 
-const STOCK_COLUMNS = [
-  { key: 'name', label: 'Medicine Name' },
-  { key: 'generic', label: 'Generic' },
-  { key: 'category', label: 'Category' },
-  {
-    key: 'quantity',
-    label: 'Stock',
-    className: 'text-center',
-    render: (val, item) => {
-      if (item.status === 'out_of_stock') {
-        return <Badge status="out_of_stock">Out of Stock</Badge>
-      }
-      if (item.status === 'near_expiry') {
-        return (
-          <div className="flex items-center justify-center gap-1">
-            <span className="font-medium">{val}</span>
-            <Badge status="near_expiry">Near Expiry</Badge>
-          </div>
-        )
-      }
-      if (item.status === 'expired') {
-        return <Badge status="expired">Expired</Badge>
-      }
-      return <span className="font-medium">{val}</span>
-    },
-  },
-  {
-    key: 'unitPrice',
-    label: 'Price',
-    render: (val) => formatCurrency(val),
-  },
-  {
-    key: 'expiryDate',
-    label: 'Expiry Date',
-    render: (val) => {
-      if (!val) return '—'
-      const date = new Date(val)
-      return date.toLocaleDateString('en-KE', { month: 'short', day: 'numeric', year: 'numeric' })
-    },
-  },
-]
-
 export default function StockList({ filter = 'all' }) {
+  const toast = useToast()
   const [products, setProducts] = useState([])
   const [loading, setLoading] = useState(true)
-  const [modalOpen, setModalOpen] = useState(false)
-  const [selectedProduct, setSelectedProduct] = useState(null)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [showForm, setShowForm] = useState(false)
+  const [editId, setEditId] = useState(null)
+  const [formData, setFormData] = useState({
+    name: '',
+    generic: '',
+    category: '',
+    quantity: 0,
+    unitPrice: 0,
+    expiryDate: '',
+    batchNumber: '',
+  })
+  const [saving, setSaving] = useState(false)
 
   const fetchProducts = useCallback(async () => {
     setLoading(true)
@@ -59,46 +31,93 @@ export default function StockList({ filter = 'all' }) {
       const res = await productsApi.getAll({})
       setProducts(res.data || [])
     } catch (err) {
-      console.error('Failed to fetch products:', err)
+      toast.error('Failed to fetch products')
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [toast])
 
+  // Initial load
   useEffect(() => {
     fetchProducts()
   }, [fetchProducts])
 
   // Filter products based on status
-  const filteredProducts = products.filter(product => {
+  const filtered = products.filter(p => {
     if (filter === 'current') {
-      return product.status !== 'expired' && product.status !== 'out_of_stock'
+      return p.status !== 'expired' && p.status !== 'out_of_stock'
     }
     if (filter === 'expired') {
-      return product.status === 'expired'
+      return p.status === 'expired'
     }
     if (filter === 'low') {
-      return product.quantity < (product.minimumStock || 10)
+      return p.quantity < (p.minimumStock || 10) && p.quantity > 0
     }
     if (filter === 'outofstock') {
-      return product.status === 'out_of_stock'
+      return p.status === 'out_of_stock'
     }
-    return true // 'all'
-  })
+    return true
+  }).filter(p =>
+    !searchQuery ||
+    p.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    p.generic?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    p.category?.toLowerCase().includes(searchQuery.toLowerCase())
+  )
 
-  const handleAddNew = useCallback(() => {
-    setSelectedProduct(null)
-    setModalOpen(true)
-  }, [])
+  const handleSubmit = useCallback(async (e) => {
+    e.preventDefault()
+    if (!formData.name.trim()) {
+      toast.error('Product name is required')
+      return
+    }
+    if (!formData.expiryDate) {
+      toast.error('Expiry date is required')
+      return
+    }
+    setSaving(true)
+    try {
+      if (editId) {
+        await productsApi.update(editId, formData)
+        toast.success('Product updated successfully')
+      } else {
+        await productsApi.create(formData)
+        toast.success('Product created successfully')
+      }
+      setFormData({ name: '', generic: '', category: '', quantity: 0, unitPrice: 0, expiryDate: '', batchNumber: '' })
+      setShowForm(false)
+      setEditId(null)
+      fetchProducts()
+    } catch (err) {
+      toast.error(err.message || 'Failed to save product')
+    } finally {
+      setSaving(false)
+    }
+  }, [formData, editId, fetchProducts, toast])
 
   const handleEdit = useCallback((product) => {
-    setSelectedProduct(product)
-    setModalOpen(true)
+    setEditId(product.id)
+    setFormData({
+      name: product.name || '',
+      generic: product.generic || '',
+      category: product.category || '',
+      quantity: product.quantity || 0,
+      unitPrice: Number(product.unitPrice) || 0,
+      expiryDate: product.expiryDate ? product.expiryDate.split('T')[0] : '',
+      batchNumber: product.batchNumber || '',
+    })
+    setShowForm(true)
   }, [])
 
-  const handleSuccess = useCallback(() => {
-    fetchProducts()
-  }, [fetchProducts])
+  const handleDelete = useCallback(async (id) => {
+    if (!confirm('Delete this product?')) return
+    try {
+      await productsApi.remove(id)
+      toast.success('Product deleted successfully')
+      fetchProducts()
+    } catch (err) {
+      toast.error(err.message || 'Failed to delete product')
+    }
+  }, [fetchProducts, toast])
 
   const getTitle = () => {
     switch (filter) {
@@ -121,23 +140,152 @@ export default function StockList({ filter = 'all' }) {
   }
 
   return (
-    <>
-      <ListTemplate
+    <PageWrapper>
+      <Card
         title={getTitle()}
         subtitle={getSubtitle()}
-        columns={STOCK_COLUMNS}
-        data={filteredProducts}
-        loading={loading}
-        onAddClick={handleAddNew}
-        onEditClick={handleEdit}
-      />
+        className="border-none shadow-sm mb-6"
+        action={
+          <button
+            onClick={() => { setShowForm(true); setEditId(null); setFormData({ name: '', generic: '', category: '', quantity: 0, unitPrice: 0, expiryDate: '', batchNumber: '' }) }}
+            className="flex items-center gap-2 px-4 py-2 bg-forty-primary text-white text-xs font-bold rounded hover:bg-forty-primary/90 transition-colors"
+          >
+            <Plus size={16} /> Add New
+          </button>
+        }
+      >
+        {/* Search */}
+        <div className="mb-6 flex items-center gap-4">
+          <div className="relative flex-1 max-w-sm">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
+            <input
+              type="text"
+              placeholder="Search products..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-forty-primary placeholder:text-gray-400"
+            />
+          </div>
+        </div>
 
-      <ProductModal
-        isOpen={modalOpen}
-        onClose={() => setModalOpen(false)}
-        product={selectedProduct}
-        onSuccess={handleSuccess}
-      />
-    </>
+        {/* Inline Form */}
+        {showForm && (
+          <div className="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
+            <h4 className="text-sm font-semibold text-gray-700 mb-3">{editId ? 'Edit' : 'Add'} Product</h4>
+            <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <input
+                required
+                placeholder="Product Name *"
+                value={formData.name}
+                onChange={e => setFormData({...formData, name: e.target.value})}
+                className="px-3 py-2 border border-gray-200 rounded text-sm focus:outline-none focus:ring-1 focus:ring-forty-primary md:col-span-2"
+              />
+              <input
+                placeholder="Generic Name"
+                value={formData.generic}
+                onChange={e => setFormData({...formData, generic: e.target.value})}
+                className="px-3 py-2 border border-gray-200 rounded text-sm focus:outline-none focus:ring-1 focus:ring-forty-primary"
+              />
+              <input
+                placeholder="Category"
+                value={formData.category}
+                onChange={e => setFormData({...formData, category: e.target.value})}
+                className="px-3 py-2 border border-gray-200 rounded text-sm focus:outline-none focus:ring-1 focus:ring-forty-primary"
+              />
+              <input
+                type="number"
+                min="0"
+                placeholder="Quantity *"
+                value={formData.quantity}
+                onChange={e => setFormData({...formData, quantity: parseInt(e.target.value) || 0})}
+                className="px-3 py-2 border border-gray-200 rounded text-sm focus:outline-none focus:ring-1 focus:ring-forty-primary"
+              />
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                placeholder="Unit Price (KES) *"
+                value={formData.unitPrice}
+                onChange={e => setFormData({...formData, unitPrice: parseFloat(e.target.value) || 0})}
+                className="px-3 py-2 border border-gray-200 rounded text-sm focus:outline-none focus:ring-1 focus:ring-forty-primary"
+              />
+              <input
+                type="date"
+                required
+                value={formData.expiryDate}
+                onChange={e => setFormData({...formData, expiryDate: e.target.value})}
+                className="px-3 py-2 border border-gray-200 rounded text-sm focus:outline-none focus:ring-1 focus:ring-forty-primary"
+              />
+              <input
+                placeholder="Batch Number"
+                value={formData.batchNumber}
+                onChange={e => setFormData({...formData, batchNumber: e.target.value})}
+                className="px-3 py-2 border border-gray-200 rounded text-sm focus:outline-none focus:ring-1 focus:ring-forty-primary"
+              />
+              <div className="flex gap-2 md:col-span-2">
+                <button type="submit" disabled={saving} className="px-4 py-2 bg-forty-primary text-white text-xs font-bold rounded hover:bg-forty-primary/90 disabled:opacity-50">{saving ? 'Saving...' : 'Save'}</button>
+                <button type="button" onClick={() => { setShowForm(false); setEditId(null) }} className="px-4 py-2 bg-gray-200 text-gray-700 text-xs font-bold rounded hover:bg-gray-300">Cancel</button>
+              </div>
+            </form>
+          </div>
+        )}
+
+        {/* Table */}
+        {loading ? (
+          <p className="text-sm text-gray-400 py-8 text-center">Loading...</p>
+        ) : filtered.length === 0 ? (
+          <p className="text-sm text-gray-400 py-8 text-center">No products found</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left">
+              <thead>
+                <tr className="border-b border-gray-100">
+                  <th className="py-3 text-[10px] font-bold text-gray-400 uppercase tracking-wider">Medicine Name</th>
+                  <th className="py-3 text-[10px] font-bold text-gray-400 uppercase tracking-wider">Generic</th>
+                  <th className="py-3 text-[10px] font-bold text-gray-400 uppercase tracking-wider">Category</th>
+                  <th className="py-3 text-[10px] font-bold text-gray-400 uppercase tracking-wider text-center">Stock</th>
+                  <th className="py-3 text-[10px] font-bold text-gray-400 uppercase tracking-wider">Price</th>
+                  <th className="py-3 text-[10px] font-bold text-gray-400 uppercase tracking-wider">Expiry</th>
+                  <th className="py-3 text-[10px] font-bold text-gray-400 uppercase tracking-wider text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-50">
+                {filtered.map(p => (
+                  <tr key={p.id} className="group hover:bg-gray-50/50 transition-colors">
+                    <td className="py-4 text-sm font-medium text-gray-700">{p.name}</td>
+                    <td className="py-4 text-sm text-gray-500">{p.generic || '—'}</td>
+                    <td className="py-4 text-sm text-gray-500">{p.category || '—'}</td>
+                    <td className="py-4 text-sm text-center">
+                      {p.status === 'out_of_stock' ? (
+                        <Badge status="out_of_stock">Out of Stock</Badge>
+                      ) : p.status === 'near_expiry' ? (
+                        <div className="flex items-center justify-center gap-1">
+                          <span className="font-medium">{p.quantity}</span>
+                          <Badge status="near_expiry">Near Expiry</Badge>
+                        </div>
+                      ) : p.status === 'expired' ? (
+                        <Badge status="expired">Expired</Badge>
+                      ) : (
+                        <span className="font-medium">{p.quantity}</span>
+                      )}
+                    </td>
+                    <td className="py-4 text-sm font-medium text-gray-700">{formatCurrency(p.unitPrice)}</td>
+                    <td className="py-4 text-sm text-gray-500">
+                      {p.expiryDate ? new Date(p.expiryDate).toLocaleDateString('en-KE', { month: 'short', day: 'numeric', year: 'numeric' }) : '—'}
+                    </td>
+                    <td className="py-4 text-right">
+                      <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button onClick={() => handleEdit(p)} className="p-1.5 text-gray-400 hover:text-forty-primary rounded transition-colors"><Edit2 size={14} /></button>
+                        <button onClick={() => handleDelete(p.id)} className="p-1.5 text-gray-400 hover:text-red-500 rounded transition-colors"><Trash2 size={14} /></button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </Card>
+    </PageWrapper>
   )
 }
