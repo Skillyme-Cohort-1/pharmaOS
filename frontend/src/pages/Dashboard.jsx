@@ -228,8 +228,8 @@ export default function Dashboard() {
                 )}
               </div>
 
-              {/* Donut chart */}
-              <div className="h-[200px] relative">
+              {/* Donut chart — no center text */}
+              <div className="h-[200px]">
                 {reportData.length > 0 ? (
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
@@ -256,20 +256,21 @@ export default function Dashboard() {
                 ) : (
                   <div className="flex items-center justify-center h-full text-gray-400 text-sm">No data</div>
                 )}
-                {/* Center label */}
-                <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                  {data.revenue.net >= 0 ? (
-                    <>
-                      <p className="text-xl font-bold text-gray-900 leading-tight">{formatCurrency(data.revenue.net || 0)}</p>
-                      <p className="text-[10px] text-gray-400 font-medium mt-0.5">Net Revenue</p>
-                    </>
-                  ) : (
-                    <>
-                      <p className="text-xl font-bold text-red-500 leading-tight">{formatCurrency(Math.abs(data.revenue.net))}</p>
-                      <p className="text-[10px] text-red-400 font-medium mt-0.5">Net Loss</p>
-                    </>
-                  )}
+              </div>
+
+              {/* Net summary — below chart, full width, clearly visible */}
+              <div className={`flex items-center justify-between px-4 py-3 rounded-xl mt-3 ${data.revenue.net >= 0 ? 'bg-emerald-50' : 'bg-red-50'}`}>
+                <div className="flex items-center gap-2">
+                  <div className={`w-2 h-2 rounded-full ${data.revenue.net >= 0 ? 'bg-emerald-500' : 'bg-red-500'}`} />
+                  <span className={`text-xs font-semibold ${data.revenue.net >= 0 ? 'text-emerald-700' : 'text-red-700'}`}>
+                    {data.revenue.net >= 0 ? 'Net Revenue' : 'Net Loss'}
+                  </span>
                 </div>
+                <span className={`text-sm font-bold ${data.revenue.net >= 0 ? 'text-emerald-700' : 'text-red-600'}`}>
+                  {data.revenue.net >= 0
+                    ? formatCurrency(data.revenue.net || 0)
+                    : formatCurrency(Math.abs(data.revenue.net))}
+                </span>
               </div>
             </>
           ) : (

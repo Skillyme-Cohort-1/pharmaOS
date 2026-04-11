@@ -10,7 +10,8 @@
     "start:production": "chmod +x start.sh && bash start.sh",
     "build": "npx prisma generate",
     "seed": "node prisma/seed.js",
-    "migrate:deploy": "npx prisma migrate deploy"
+    "migrate:deploy": "npx prisma migrate deploy",
+    "update-demo": "node prisma/update-demo-data.js"
   },
   "keywords": [
     "pharmacy",
