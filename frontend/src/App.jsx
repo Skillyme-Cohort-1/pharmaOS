@@ -16,6 +16,8 @@ import DueList from './pages/DueList'
 import Tax from './pages/Tax'
 import Settings from './pages/Settings'
 import StockList from './pages/StockList'
+import Products from './pages/Products'
+import Reports from './pages/Reports'
 import ListTemplate from './components/templates/ListTemplate'
 import FormTemplate, { FormField, FormInput, FormSelect } from './components/templates/FormTemplate'
 import Badge from './components/ui/Badge'
@@ -51,25 +53,7 @@ function App() {
             <Route path="/purchases" element={<ProtectedRoute><Purchases /></ProtectedRoute>} />
 
             {/* Products */}
-            <Route path="/products" element={<ProtectedRoute>
-              <ListTemplate
-                title="All Products"
-                subtitle="Complete inventory"
-                storageKey="products_all"
-                columns={COLS.PRODUCTS}
-                initialData={[]}
-              />
-            </ProtectedRoute>} />
-            <Route path="/products/new" element={<ProtectedRoute>
-              <FormTemplate title="Add Product" subtitle="Create new medicine record">
-                <FormField label="Medicine Name" required><FormInput /></FormField>
-                <FormField label="Generic Name"><FormInput /></FormField>
-                <FormField label="Category"><FormSelect><option>Tablet</option><option>Syrup</option></FormSelect></FormField>
-                <FormField label="Purchase Price"><FormInput type="number" /></FormField>
-                <FormField label="Sale Price"><FormInput type="number" /></FormField>
-                <FormField label="Stock Quantity"><FormInput type="number" /></FormField>
-              </FormTemplate>
-            </ProtectedRoute>} />
+            <Route path="/products" element={<ProtectedRoute><Products /></ProtectedRoute>} />
             <Route path="/products/barcodes" element={<ProtectedRoute>
               <ListTemplate title="Print Barcodes" subtitle="Generate labels for current stock" storageKey="products_barcodes" columns={COLS.PRODUCTS} initialData={[]} />
             </ProtectedRoute>} />
@@ -88,9 +72,7 @@ function App() {
             <Route path="/due-list" element={<ProtectedRoute><DueList /></ProtectedRoute>} />
 
             {/* Reports & Specialized */}
-            <Route path="/reports" element={<ProtectedRoute>
-              <ListTemplate title="Reports" subtitle="Generate system insights" storageKey="reports" columns={COLS.PRODUCTS} initialData={[]} />
-            </ProtectedRoute>} />
+            <Route path="/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
             <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
 
             {/* Stock List */}

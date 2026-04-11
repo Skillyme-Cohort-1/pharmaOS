@@ -184,9 +184,9 @@ export default function Dashboard() {
       </div>
 
       {/* Main Charts Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 mb-8">
         {/* Profit / Loss Bar Chart */}
-        <Card title="Monthly Profit / Loss" className="lg:col-span-2 shadow-sm border-none">
+        <Card title="Monthly Profit / Loss" className="lg:col-span-3 shadow-sm border-none">
           <div className="h-[220px] sm:h-[300px]">
             {permissions.analytics ? (
               <ResponsiveContainer width="100%" height="100%">
@@ -206,7 +206,7 @@ export default function Dashboard() {
         </Card>
 
         {/* Overall Report Donut Chart */}
-        <Card title="Revenue Breakdown" className="shadow-sm border-none">
+        <Card title="Revenue Breakdown" className="lg:col-span-2 shadow-sm border-none">
           {permissions.analytics ? (
             <>
               {/* Legend — above the chart for clear visibility */}
