@@ -48,6 +48,7 @@ export const productsApi = {
 export const ordersApi = {
   getAll: (params) => api.get('/orders', { params }),
   create: (data) => api.post('/orders', data),
+  update: (id, data) => api.put(`/orders/${id}`, data),
   updateStatus: (id, status) => api.put(`/orders/${id}/status`, { status }),
 }
 
@@ -63,6 +64,9 @@ export const alertsApi = {
 export const analyticsApi = {
   sales: (period) => api.get('/analytics/sales', { params: { period } }),
   topProducts: (params) => api.get('/analytics/top-products', { params }),
+  dashboard: () => api.get('/analytics/dashboard'),
+  profitLoss: (params) => api.get('/analytics/profit-loss', { params }),
+  revenue: (params) => api.get('/analytics/revenue', { params }),
 }
 
 // Transactions API
@@ -144,12 +148,4 @@ export const settingsApi = {
   get: (key) => api.get(`/settings/${key}`),
   update: (key, data) => api.put(`/settings/${key}`, data),
   updateBulk: (data) => api.put('/settings/bulk', data),
-}
-
-// Extend Analytics API with dashboard endpoints
-export const analyticsExtended = {
-  ...analyticsApi,
-  dashboard: () => api.get('/analytics/dashboard'),
-  profitLoss: (params) => api.get('/analytics/profit-loss', { params }),
-  revenue: (params) => api.get('/analytics/revenue', { params }),
 }

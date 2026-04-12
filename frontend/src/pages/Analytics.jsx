@@ -140,13 +140,13 @@ export default function Analytics() {
         <Card
           title="Top Products"
           action={
-            <div className="flex gap-2">
-              <div className="flex gap-2 mr-4">
+            <div className="flex flex-wrap gap-2">
+              <div className="flex gap-1.5">
                 {metricTabs.map((tab) => (
                   <button
                     key={tab.value}
                     onClick={() => setProductMetric(tab.value)}
-                    className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${
+                    className={`px-2 sm:px-3 py-1.5 text-xs font-medium rounded-lg transition-colors whitespace-nowrap ${
                       productMetric === tab.value
                         ? 'bg-teal-600 text-white'
                         : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
@@ -156,12 +156,12 @@ export default function Analytics() {
                   </button>
                 ))}
               </div>
-              <div className="flex gap-2">
+              <div className="flex gap-1.5">
                 {periodFilterTabs.map((tab) => (
                   <button
                     key={tab.value}
                     onClick={() => setProductPeriod(tab.value)}
-                    className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${
+                    className={`px-2 sm:px-3 py-1.5 text-xs font-medium rounded-lg transition-colors whitespace-nowrap ${
                       productPeriod === tab.value
                         ? 'bg-teal-600 text-white'
                         : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
@@ -180,7 +180,7 @@ export default function Analytics() {
             <div className="h-72 flex items-center justify-center text-gray-500">No data available</div>
           ) : (
             <ResponsiveContainer width="100%" height={280}>
-              <BarChart data={topProducts} layout="vertical" margin={{ left: 80 }}>
+              <BarChart data={topProducts} layout="vertical" margin={{ left: 60, right: 10 }}>
                 <XAxis
                   type="number"
                   stroke="#9CA3AF"

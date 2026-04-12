@@ -103,39 +103,68 @@ export default function Customers() {
         ) : error ? (
           <p className="text-sm text-red-500 py-8 text-center">{error}</p>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left">
-              <thead>
-                <tr className="border-b border-gray-100">
-                  <th className="py-3 text-[10px] font-bold text-gray-400 uppercase tracking-wider">Name</th>
-                  <th className="py-3 text-[10px] font-bold text-gray-400 uppercase tracking-wider">Phone</th>
-                  <th className="py-3 text-[10px] font-bold text-gray-400 uppercase tracking-wider">Email</th>
-                  <th className="py-3 text-[10px] font-bold text-gray-400 uppercase tracking-wider text-right">Balance</th>
-                  <th className="py-3 text-[10px] font-bold text-gray-400 uppercase tracking-wider text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-50">
-                {filtered.length > 0 ? filtered.map(c => (
-                  <tr key={c.id} className="group hover:bg-gray-50/50 transition-colors">
-                    <td className="py-4 text-sm font-medium text-gray-700">{c.name}</td>
-                    <td className="py-4 text-sm text-gray-500">{c.phone || '—'}</td>
-                    <td className="py-4 text-sm text-gray-500">{c.email || '—'}</td>
-                    <td className={`py-4 text-sm font-semibold text-right ${Number(c.balance) > 0 ? 'text-red-500' : 'text-green-600'}`}>
-                      {formatCurrency(c.balance)}
-                    </td>
-                    <td className="py-4 text-right">
-                      <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button onClick={() => { setEditId(c.id); setFormData({ name: c.name, phone: c.phone||'', email: c.email||'', address: c.address||'' }); setShowForm(true) }} className="p-1.5 text-gray-400 hover:text-forty-primary rounded transition-colors"><Edit2 size={14} /></button>
-                        <button onClick={() => handleDelete(c.id)} className="p-1.5 text-gray-400 hover:text-red-500 rounded transition-colors"><Trash2 size={14} /></button>
-                      </div>
-                    </td>
+          <>
+            {/* Desktop table */}
+            <div className="hidden sm:block overflow-x-auto">
+              <table className="w-full text-left">
+                <thead>
+                  <tr className="border-b border-gray-100">
+                    <th className="py-3 text-[10px] font-bold text-gray-400 uppercase tracking-wider">Name</th>
+                    <th className="py-3 text-[10px] font-bold text-gray-400 uppercase tracking-wider">Phone</th>
+                    <th className="py-3 text-[10px] font-bold text-gray-400 uppercase tracking-wider">Email</th>
+                    <th className="py-3 text-[10px] font-bold text-gray-400 uppercase tracking-wider text-right">Balance</th>
+                    <th className="py-3 text-[10px] font-bold text-gray-400 uppercase tracking-wider text-right">Actions</th>
                   </tr>
-                )) : (
-                  <tr><td colSpan="5" className="py-12 text-center text-sm text-gray-400">No customers found</td></tr>
-                )}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody className="divide-y divide-gray-50">
+                  {filtered.length > 0 ? filtered.map(c => (
+                    <tr key={c.id} className="group hover:bg-gray-50/50 transition-colors">
+                      <td className="py-4 text-sm font-medium text-gray-700">{c.name}</td>
+                      <td className="py-4 text-sm text-gray-500">{c.phone || '—'}</td>
+                      <td className="py-4 text-sm text-gray-500">{c.email || '—'}</td>
+                      <td className={`py-4 text-sm font-semibold text-right ${Number(c.balance) > 0 ? 'text-red-500' : 'text-green-600'}`}>
+                        {formatCurrency(c.balance)}
+                      </td>
+                      <td className="py-4 text-right">
+                        <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <button onClick={() => { setEditId(c.id); setFormData({ name: c.name, phone: c.phone||'', email: c.email||'', address: c.address||'' }); setShowForm(true) }} className="p-1.5 text-gray-400 hover:text-forty-primary rounded transition-colors"><Edit2 size={14} /></button>
+                          <button onClick={() => handleDelete(c.id)} className="p-1.5 text-gray-400 hover:text-red-500 rounded transition-colors"><Trash2 size={14} /></button>
+                        </div>
+                      </td>
+                    </tr>
+                  )) : (
+                    <tr><td colSpan="5" className="py-12 text-center text-sm text-gray-400">No customers found</td></tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Mobile card list */}
+            <div className="sm:hidden space-y-3">
+              {filtered.length > 0 ? filtered.map(c => (
+                <div key={c.id} className="bg-white border border-gray-100 rounded-xl p-4 shadow-sm">
+                  <div className="flex items-start justify-between mb-1">
+                    <div>
+                      <p className="text-sm font-semibold text-gray-800">{c.name}</p>
+                      <p className="text-xs text-gray-400 mt-0.5">{c.phone || '—'}</p>
+                    </div>
+                    <span className={`text-sm font-bold ${Number(c.balance) > 0 ? 'text-red-500' : 'text-green-600'}`}>
+                      {formatCurrency(c.balance)}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between mt-2">
+                    <p className="text-xs text-gray-500 truncate flex-1">{c.email || '—'}</p>
+                    <div className="flex items-center gap-2 ml-2 shrink-0">
+                      <button onClick={() => { setEditId(c.id); setFormData({ name: c.name, phone: c.phone||'', email: c.email||'', address: c.address||'' }); setShowForm(true) }} className="p-1.5 text-gray-400 hover:text-forty-primary rounded transition-colors"><Edit2 size={14} /></button>
+                      <button onClick={() => handleDelete(c.id)} className="p-1.5 text-gray-400 hover:text-red-500 rounded transition-colors"><Trash2 size={14} /></button>
+                    </div>
+                  </div>
+                </div>
+              )) : (
+                <p className="py-12 text-center text-sm text-gray-400">No customers found</p>
+              )}
+            </div>
+          </>
         )}
       </Card>
     </PageWrapper>

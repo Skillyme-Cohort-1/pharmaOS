@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Plus, Pencil, Trash2, Package } from 'lucide-react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import PageWrapper from '../components/layout/PageWrapper'
@@ -60,12 +60,18 @@ export default function Inventory() {
   const [deleting, setDeleting] = useState(false)
 
   const statusFilter = searchParams.get('status') || ''
+  const searchParam = searchParams.get('search') || ''
+  const [search, setSearch] = useState(searchParam)
+
+  // Sync search state when URL param changes (e.g. from navbar search)
+  useEffect(() => {
+    setSearch(searchParams.get('search') || '')
+  }, [searchParams])
+
   const { products, loading, refetch } = useProducts({ 
     status: statusFilter || undefined,
     search: search || undefined,
   })
-
-  const handleOpenModal = (product = null) => {
     if (product) {
       setSelectedProduct(product)
       setFormData({

@@ -6,8 +6,12 @@ import {
   updateIncome,
   deleteIncome,
 } from '../controllers/incomeController.js'
+import { roleGuard } from '../middleware/roleGuard.js'
 
 const router = Router()
+
+// Apply role guard to all income routes
+router.use(roleGuard(['ADMIN', 'SUPER_ADMIN', 'FINANCE']))
 
 router.get('/', getAllIncomes)
 router.get('/summary', getIncomeSummary)

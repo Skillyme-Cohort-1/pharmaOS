@@ -1,17 +1,18 @@
 import { useState, useMemo } from 'react'
-import { 
-  Search, 
-  ShoppingCart, 
-  UserPlus, 
-  Calculator, 
-  Trash2, 
-  Plus, 
-  Minus, 
-  Printer, 
-  RotateCcw, 
-  Save, 
-  List, 
-  History, 
+import { useNavigate } from 'react-router-dom'
+import {
+  Search,
+  ShoppingCart,
+  UserPlus,
+  Calculator,
+  Trash2,
+  Plus,
+  Minus,
+  Printer,
+  RotateCcw,
+  Save,
+  List,
+  History,
   Power,
   X,
   ScanLine,
@@ -19,7 +20,8 @@ import {
 } from 'lucide-react'
 import PageWrapper from '../../components/layout/PageWrapper'
 import ProductCard from '../../components/ui/ProductCard'
-import useLocalStorage from '../../hooks/useLocalStorage'
+import { useAuth } from '../../context/AuthContext'
+import { useToast } from '../../context/ToastContext'
 import { formatCurrency } from '../../utils/formatCurrency'
 
 // --- Mock Products from Image ---
@@ -37,12 +39,41 @@ const MOCK_POS_PRODUCTS = [
 ]
 
 export default function POSView() {
+  const navigate = useNavigate()
+  const { logout } = useAuth()
+  const toast = useToast()
   const [searchQuery, setSearchQuery] = useState('')
   const [cart, setCart] = useState([])
   const [customer, setCustomer] = useState('Select Customer')
   const [receiveAmount, setReceiveAmount] = useState(0)
   const [discount, setDiscount] = useState(0)
   const [deliveryCost, setDeliveryCost] = useState(0)
+  const [showCalculator, setShowCalculator] = useState(false)
+  const [calcDisplay, setCalcDisplay] = useState('0')
+  const [calcExpression, setCalcExpression] = useState('')
+
+  // Simple calculator logic
+  const handleCalcInput = (value) => {
+    if (value === 'C') {
+      setCalcDisplay('0')
+      setCalcExpression('')
+    } else if (value === '=') {
+      try {
+        // eslint-disable-next-line no-eval
+        const result = eval(calcExpression + calcDisplay)
+        setCalcDisplay(String(result))
+        setCalcExpression('')
+      } catch {
+        setCalcDisplay('Error')
+        setCalcExpression('')
+      }
+    } else if (['+', '-', '*', '/'].includes(value)) {
+      setCalcExpression(calcExpression + calcDisplay + value)
+      setCalcDisplay('0')
+    } else {
+      setCalcDisplay(calcDisplay === '0' ? value : calcDisplay + value)
+    }
+  }
 
   const addToCart = (product) => {
     if (product.stock <= 0) return
@@ -74,7 +105,7 @@ export default function POSView() {
 
   return (
     <PageWrapper title="Sale New">
-      <div className="flex flex-col xl:flex-row gap-6 h-[calc(100vh-140px)] min-h-[700px]">
+      <div className="flex flex-col xl:flex-row gap-6 min-h-[700px]">
         
         {/* Left Section: Product Browser */}
         <div className="flex-1 flex flex-col min-w-0 min-h-[400px]">
@@ -134,16 +165,36 @@ export default function POSView() {
 
         {/* Right Section: Transaction Panel */}
         <div className="w-full xl:w-[500px] flex flex-col shrink-0">
-          <div className="flex flex-col h-full bg-white border border-gray-100 rounded-xl shadow-sm overflow-hidden">
+          <div className="flex flex-col bg-white border border-gray-100 rounded-xl shadow-sm overflow-hidden" style={{ maxHeight: 'calc(100vh - 120px)' }}>
             {/* Quick Actions & Header */}
-            <div className="p-4 border-b border-gray-100">
+            <div className="p-4 border-b border-gray-100 shrink-0">
                <div className="flex items-center justify-between mb-4">
                   <h3 className="text-sm font-bold text-gray-800">Quick Action</h3>
                   <div className="flex gap-1.5">
-                    <button className="px-3 py-2 bg-white border border-gray-200 rounded text-xs font-bold text-gray-500 hover:bg-gray-50 transition-colors">Stock List</button>
-                    <button className="px-3 py-2 bg-white border border-gray-200 rounded text-xs font-bold text-gray-500 hover:bg-gray-50 transition-colors">Today Sales</button>
-                    <button className="p-2 bg-white border border-gray-200 rounded text-gray-500 hover:bg-gray-50 transition-colors"><Calculator size={16} /></button>
-                    <button className="p-2 bg-white border border-gray-200 rounded text-red-500 hover:bg-red-50 transition-colors"><Power size={16} /></button>
+                    <button
+                      onClick={() => navigate('/stock/current')}
+                      className="px-3 py-2 bg-white border border-gray-200 rounded text-xs font-bold text-gray-500 hover:bg-gray-50 transition-colors"
+                    >
+                      Stock List
+                    </button>
+                    <button
+                      onClick={() => navigate('/sales')}
+                      className="px-3 py-2 bg-white border border-gray-200 rounded text-xs font-bold text-gray-500 hover:bg-gray-50 transition-colors"
+                    >
+                      Today Sales
+                    </button>
+                    <button
+                      onClick={() => setShowCalculator(true)}
+                      className="p-2 bg-white border border-gray-200 rounded text-gray-500 hover:bg-gray-50 transition-colors"
+                    >
+                      <Calculator size={16} />
+                    </button>
+                    <button
+                      onClick={() => { if (confirm('Are you sure you want to logout?')) logout() }}
+                      className="p-2 bg-white border border-gray-200 rounded text-red-500 hover:bg-red-50 transition-colors"
+                    >
+                      <Power size={16} />
+                    </button>
                   </div>
                </div>
 
@@ -161,14 +212,24 @@ export default function POSView() {
                     </select>
                     <ChevronDown size={18} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
                   </div>
-                  <button className="p-2.5 bg-forty-dark text-white rounded-lg hover:bg-black transition-colors shadow-sm">
+                  <button
+                    onClick={() => navigate('/customers')}
+                    className="p-2.5 bg-forty-dark text-white rounded-lg hover:bg-black transition-colors shadow-sm"
+                    title="Add New Customer"
+                  >
                     <Plus size={20} />
                   </button>
                </div>
             </div>
 
-            {/* Transaction Table */}
-            <div className="flex-1 overflow-auto custom-scrollbar">
+            {/* Transaction Table - Min height for 5 items, expands up to max */}
+            <div 
+              className="overflow-auto custom-scrollbar shrink-0"
+              style={{ 
+                minHeight: '280px',
+                maxHeight: cart.length > 5 ? '420px' : 'auto'
+              }}
+            >
               <table className="w-full text-left border-collapse">
                 <thead className="sticky top-0 bg-white z-10">
                   <tr className="border-b border-gray-100">
@@ -225,14 +286,14 @@ export default function POSView() {
             </div>
 
             {/* Billing Section */}
-            <div className="p-4 border-t border-gray-100">
+            <div className="p-4 border-t border-gray-100 shrink-0">
               {/* Total Summary - Full Width */}
               <div className="mb-4 p-3 bg-gray-50 border border-gray-100 rounded-xl text-center">
                 <p className="text-sm font-black text-gray-800">Total</p>
                 <p className="text-xl font-black text-gray-900">{formatCurrency(total)}</p>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {/* Left Column - Payment Inputs */}
                 <div className="space-y-3">
                   <div className="flex items-center gap-3">
@@ -303,7 +364,7 @@ export default function POSView() {
             </div>
 
             {/* Final Footer Buttons */}
-            <div className="grid grid-cols-3 gap-3 p-4 bg-gray-50 border-t border-gray-100">
+            <div className="grid grid-cols-3 gap-3 p-4 bg-gray-50 border-t border-gray-100 shrink-0">
                <button 
                 onClick={() => { setCart([]); setReceiveAmount(0); setDiscount(0); setDeliveryCost(0); }}
                 className="py-3 bg-white border border-[#FF6565] text-[#FF6565] rounded-lg text-xs font-black uppercase hover:bg-red-50 transition-colors"
@@ -320,6 +381,70 @@ export default function POSView() {
           </div>
         </div>
       </div>
+
+      {/* Calculator Modal */}
+      {showCalculator && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setShowCalculator(false)}>
+          <div className="bg-white rounded-2xl shadow-2xl p-6 w-72" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-sm font-bold text-gray-800">Calculator</h3>
+              <button onClick={() => setShowCalculator(false)} className="text-gray-400 hover:text-gray-600"><X size={18} /></button>
+            </div>
+            
+            {/* Display */}
+            <div className="mb-4 p-3 bg-gray-50 rounded-lg border border-gray-200 text-right">
+              {calcExpression && <p className="text-xs text-gray-400 mb-1">{calcExpression}</p>}
+              <p className="text-2xl font-bold text-gray-900 truncate">{calcDisplay}</p>
+            </div>
+
+            {/* Buttons */}
+            <div className="grid grid-cols-4 gap-2">
+              {['C', '7', '8', '9'].map(btn => (
+                <button
+                  key={btn}
+                  onClick={() => handleCalcInput(btn)}
+                  className={`p-3 rounded-lg text-sm font-bold transition-colors ${btn === 'C' ? 'bg-red-100 text-red-600 hover:bg-red-200' : 'bg-white border border-gray-200 text-gray-700 hover:bg-gray-50'}`}
+                >
+                  {btn}
+                </button>
+              ))}
+              {['/', '4', '5', '6'].map(btn => (
+                <button
+                  key={btn}
+                  onClick={() => handleCalcInput(btn)}
+                  className={`p-3 rounded-lg text-sm font-bold transition-colors ${btn === '/' ? 'bg-gray-100 text-gray-700 hover:bg-gray-200' : 'bg-white border border-gray-200 text-gray-700 hover:bg-gray-50'}`}
+                >
+                  {btn}
+                </button>
+              ))}
+              {['*', '1', '2', '3'].map(btn => (
+                <button
+                  key={btn}
+                  onClick={() => handleCalcInput(btn)}
+                  className={`p-3 rounded-lg text-sm font-bold transition-colors ${btn === '*' ? 'bg-gray-100 text-gray-700 hover:bg-gray-200' : 'bg-white border border-gray-200 text-gray-700 hover:bg-gray-50'}`}
+                >
+                  {btn}
+                </button>
+              ))}
+              {['-', '0', '.', '+'].map(btn => (
+                <button
+                  key={btn}
+                  onClick={() => handleCalcInput(btn)}
+                  className={`p-3 rounded-lg text-sm font-bold transition-colors ${['+', '-', '*'].includes(btn) ? 'bg-forty-primary text-white hover:bg-forty-primary/90' : 'bg-white border border-gray-200 text-gray-700 hover:bg-gray-50'}`}
+                >
+                  {btn}
+                </button>
+              ))}
+              <button
+                onClick={() => handleCalcInput('=')}
+                className="p-3 rounded-lg text-sm font-bold bg-forty-dark text-white hover:bg-black transition-colors col-span-4"
+              >
+                =
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </PageWrapper>
   )
 }

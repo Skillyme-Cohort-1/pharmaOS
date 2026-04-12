@@ -4,8 +4,10 @@ import Navbar from './Navbar'
 import { useState } from 'react'
 
 export default function PageWrapper({ title, action, children }) {
-  // Desktop is closed by default to provide more workspace
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false)
+  // Open on desktop, closed on mobile by default
+  const [isSidebarOpen, setIsSidebarOpen] = useState(
+    typeof window !== 'undefined' ? window.innerWidth >= 1024 : true
+  )
 
   const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen)
 

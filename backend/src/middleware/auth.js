@@ -26,11 +26,15 @@ export async function authenticate(req, res, next) {
     // Attach user from DB to ensure it still exists
     const user = await prisma.user.findUnique({
       where: { id: payload.sub },
-      select: { id: true, email: true, name: true, role: true },
+      select: { id: true, email: true, userType: true, isActive: true },
     })
 
     if (!user) {
       throw new AppError('User no longer exists', 401, 'USER_NOT_FOUND')
+    }
+
+    if (!user.isActive) {
+      throw new AppError('User account is disabled', 403, 'ACCOUNT_DISABLED')
     }
 
     req.user = user

@@ -7,8 +7,11 @@
   "scripts": {
     "dev": "nodemon server.js",
     "start": "node server.js",
+    "start:production": "chmod +x start.sh && bash start.sh",
     "build": "npx prisma generate",
-    "seed": "node prisma/seed.js"
+    "seed": "node prisma/seed.js",
+    "migrate:deploy": "npx prisma migrate deploy",
+    "update-demo": "node prisma/update-demo-data.js"
   },
   "keywords": [
     "pharmacy",
@@ -36,9 +39,7 @@
     "nodemon": "^3.0.0"
   },
   "prisma": {
-    "seed": {
-      "command": "node prisma/seed.js"
-    },
+    "seed": "node prisma/seed.js",
     "schema": "./prisma/schema.prisma"
   }
 }

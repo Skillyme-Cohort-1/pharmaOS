@@ -59,7 +59,7 @@ export function AuthProvider({ children }) {
       setToken(jwt)
       setUser(userData)
       navigate('/', { replace: true })
-      toast.success(`Welcome back, ${userData.name}!`)
+      toast.success(`Welcome back, ${userData.name || userData.email}!`)
       return true
     } catch (err) {
       toast.error(err.message || 'Login failed')
