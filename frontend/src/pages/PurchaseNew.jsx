@@ -12,22 +12,23 @@ import {
 import PageWrapper from '../components/layout/PageWrapper'
 import ProductCard from '../components/ui/ProductCard'
 import { formatCurrency } from '../utils/formatCurrency'
-
-// --- Mock Products ---
-const MOCK_PRODUCTS = [
+// --- Mock Data ---
+const INITIAL_PRODUCTS = [
   { id: '1', name: 'Paracetamol Tablets IP', price: 1638.75, stock: 120, image: '/images/products/placeholder.svg' },
   { id: '2', name: 'Curafin 5ml Syrup', price: 942.76, stock: 45, image: '/images/products/placeholder.svg' },
   { id: '3', name: 'Avaspray Nasal 120ml', price: 831.60, stock: 12, image: '/images/products/placeholder.svg' },
 ]
-
+const INITIAL_SUPPLIERS = ['GSK Pharmaceuticals', 'Abbott Laboratories']
 export default function PurchaseNew() {
-  const navigate = useNavigate()
-
+  const [products, setProducts] = useState(INITIAL_PRODUCTS)
+  const [suppliers, setSuppliers] = useState(INITIAL_SUPPLIERS)
   // 1. Modals state
   const [showStockList, setShowStockList] = useState(false)
   const [showCalculator, setShowCalculator] = useState(false)
   const [calcInput, setCalcInput] = useState('')
-
+  // Modal Form States
+  const [newProduct, setNewProduct] = useState({ name: '', category: 'Tablets', price: '', stock: '', description: '' })
+  const [newSupplier, setNewSupplier] = useState({ name: '', contact: '', phone: '', email: '', address: '' })
   const handleCalcBtn = (val) => {
     if (val === 'C') { setCalcInput(''); return; }
     if (val === '=') {
@@ -40,7 +41,6 @@ export default function PurchaseNew() {
     }
     setCalcInput((prev) => (prev === 'Error' ? val : prev + val));
   }
-
   const [searchQuery, setSearchQuery] = useState('')
   const [cart, setCart] = useState([])
   const [supplier, setSupplier] = useState('Select Supplier')
@@ -50,12 +50,31 @@ export default function PurchaseNew() {
   const [purchaseDate, setPurchaseDate] = useState(new Date().toISOString().split('T')[0])
   const [paymentMethod, setPaymentMethod] = useState('Cash')
   const [notes, setNotes] = useState('')
-
   const [payAmount, setPayAmount] = useState(0)
   const [discount, setDiscount] = useState(0)
   const [deliveryCost, setDeliveryCost] = useState(0)
   const [taxPercent, setTaxPercent] = useState(0)
-
+  const [showAddProduct, setShowAddProduct] = useState(false)
+  const [showAddSupplier, setShowAddSupplier] = useState(false)
+  const handleSaveProduct = () => {
+    if (!newProduct.name) return
+    const id = (products.length + 1).toString()
+    setProducts([...products, { 
+      id, 
+      ...newProduct, 
+      price: parseFloat(newProduct.price) || 0,
+      stock: parseInt(newProduct.stock) || 0,
+      image: '/images/products/placeholder.svg' 
+    }])
+    setNewProduct({ name: '', category: 'Tablets', price: '', stock: '', description: '' })
+    setShowAddProduct(false)
+  }
+  const handleSaveSupplier = () => {
+    if (!newSupplier.name) return
+    setSuppliers([...suppliers, newSupplier.name])
+    setNewSupplier({ name: '', contact: '', phone: '', email: '', address: '' })
+    setShowAddSupplier(false)
+  }
   const addToCart = (product) => {
     setCart(prev => {
       const existing = prev.find(item => item.id === product.id)
@@ -71,7 +90,6 @@ export default function PurchaseNew() {
       }]
     })
   }
-
   const updateCartItem = (id, field, value) => {
     setCart(prev => prev.map(item => {
       if (item.id === id) {
@@ -81,17 +99,13 @@ export default function PurchaseNew() {
       return item
     }))
   }
-
   const removeFromCart = (id) => setCart(prev => prev.filter(item => item.id !== id))
-
   const subtotal = useMemo(() => cart.reduce((sum, item) => sum + (item.price * item.quantity), 0), [cart])
   const taxAmount = useMemo(() => (subtotal * taxPercent) / 100, [subtotal, taxPercent])
   const total = useMemo(() => subtotal + taxAmount - discount + deliveryCost, [subtotal, taxAmount, discount, deliveryCost])
   const changeAmount = useMemo(() => Math.max(0, payAmount - total), [payAmount, total])
   const dueAmount = useMemo(() => Math.max(0, total - payAmount), [total, payAmount])
-
-  const filteredProducts = MOCK_PRODUCTS.filter(p => p.name.toLowerCase().includes(searchQuery.toLowerCase()))
-
+  const filteredProducts = products.filter(p => p.name.toLowerCase().includes(searchQuery.toLowerCase()))
   return (
     <PageWrapper title="Purchase New">
       <div className="flex flex-col lg:flex-row gap-6 h-[calc(100vh-140px)] min-h-[700px]">
@@ -108,7 +122,6 @@ export default function PurchaseNew() {
               </select>
               <ChevronDown size={18} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
             </div>
-
             {/* Search Bar */}
             <div className="flex gap-2">
               <div className="relative flex-1">
@@ -120,12 +133,11 @@ export default function PurchaseNew() {
                   className="w-full px-4 py-3 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-forty-primary placeholder:text-gray-400"
                 />
               </div>
-              <button className="p-3 bg-forty-primary text-white rounded-lg hover:bg-forty-primary/90 transition-colors shrink-0">
+              <button onClick={() => setShowAddProduct(true)} className="p-3 bg-forty-primary text-white rounded-lg hover:bg-forty-primary/90 transition-colors shrink-0">
                 <Plus size={24} />
               </button>
             </div>
           </div>
-
           {/* Product Grid */}
           <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar pb-20">
             {filteredProducts.length === 0 ? (
@@ -148,7 +160,6 @@ export default function PurchaseNew() {
             )}
           </div>
         </div>
-
         {/* Right Section: Transaction Panel */}
         <div className="w-full lg:w-[450px] xl:w-[600px] flex flex-col shrink-0">
           <div className="flex flex-col h-full bg-white border border-gray-100 rounded-xl shadow-sm overflow-hidden">
@@ -163,7 +174,6 @@ export default function PurchaseNew() {
                     <button onClick={() => navigate('/')} className="p-2 bg-white border border-gray-200 rounded text-red-500 hover:text-white hover:bg-red-500 hover:border-red-500 transition-all"><Power size={16} /></button>
                   </div>
                </div>
-
                {/* Dropdown Calculator Modal */}
                {showCalculator && (
                  <div className="absolute right-4 top-16 z-50 bg-white border border-gray-200 shadow-xl rounded-xl p-4 w-64">
@@ -180,7 +190,6 @@ export default function PurchaseNew() {
                    </div>
                  </div>
                )}
-
                {/* Supplier & Purchase Info */}
                <div className="space-y-3">
                   <div className="flex gap-1">
@@ -191,12 +200,11 @@ export default function PurchaseNew() {
                          className="w-full pl-4 pr-10 py-2.5 bg-white border border-gray-200 rounded-lg text-sm font-bold text-gray-500 appearance-none focus:outline-none focus:ring-1 focus:ring-forty-primary"
                        >
                          <option>Select Supplier</option>
-                         <option>GSK Pharmaceuticals</option>
-                         <option>Abbott Laboratories</option>
+                         {suppliers.map(s => (<option key={s} value={s}>{s}</option>))}
                        </select>
                        <ChevronDown size={18} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
                      </div>
-                     <button className="p-2.5 bg-forty-dark text-white rounded-lg hover:bg-black transition-colors shadow-sm">
+                     <button onClick={() => setShowAddSupplier(true)} className="p-2.5 bg-forty-dark text-white rounded-lg hover:bg-black transition-colors shadow-sm">
                        <Plus size={20} />
                      </button>
                   </div>
@@ -212,7 +220,6 @@ export default function PurchaseNew() {
                   </div>
                </div>
             </div>
-
             {/* Transaction Table */}
             <div className="flex-1 overflow-x-auto custom-scrollbar">
               <table className="w-full text-left border-collapse min-w-[500px]">
@@ -274,7 +281,6 @@ export default function PurchaseNew() {
                 </tbody>
               </table>
             </div>
-
             {/* Billing Section */}
             <div className="p-4 border-t border-gray-100">
               <div className="grid grid-cols-2 gap-4">
@@ -302,7 +308,6 @@ export default function PurchaseNew() {
                     <input type="number" readOnly value={dueAmount} className="w-full px-2 py-1.5 bg-gray-50 border border-gray-200 rounded text-xs font-bold text-gray-500 outline-none" />
                   </div>
                 </div>
-
                 {/* Right Column - VAT, Discount, Delivery */}
                 <div className="space-y-3 flex flex-col justify-between h-full py-1">
                    {/* Total Summary */}
@@ -310,7 +315,6 @@ export default function PurchaseNew() {
                       <p className="text-sm font-black text-gray-800">Total</p>
                       <p className="text-lg font-black text-gray-900">{formatCurrency(total)}</p>
                    </div>
-
                   <div className="flex items-center gap-2">
                     <span className="text-[11px] font-bold text-gray-500 w-12 text-left shrink-0">Tax (%)</span>
                     <input type="number" value={taxPercent} onChange={e => setTaxPercent(parseFloat(e.target.value)||0)} className="flex-1 px-2 py-1.5 bg-white border border-gray-200 rounded text-xs font-bold outline-none" />
@@ -344,7 +348,6 @@ export default function PurchaseNew() {
                  />
               </div>
             </div>
-
             {/* Final Footer Buttons */}
             <div className="grid grid-cols-3 gap-3 p-4 bg-gray-50 border-t border-gray-100 mt-auto shrink-0">
                <button 
@@ -363,7 +366,161 @@ export default function PurchaseNew() {
           </div>
         </div>
       </div>
-
+      {/* Add Product Modal Overlay */}
+      {showAddProduct && (
+        <div className="fixed inset-0 bg-black/40 z-[100] flex flex-col items-center justify-center p-4">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg flex flex-col overflow-hidden max-h-[90vh]">
+            <div className="p-5 border-b border-gray-100 flex items-center justify-between bg-white">
+              <h2 className="text-xl font-black text-gray-800">Add New Product</h2>
+              <button onClick={() => setShowAddProduct(false)} className="text-red-500 hover:bg-red-50 p-1.5 rounded-lg transition-colors">
+                <X size={24} />
+              </button>
+            </div>
+            
+            <div className="p-5 flex-1 overflow-auto bg-gray-50/50 space-y-4 custom-scrollbar">
+               <div>
+                  <label className="block text-xs font-black text-gray-700 mb-1">Product Name *</label>
+                  <input 
+                    type="text" 
+                    placeholder="e.g. Paracetamol 500mg" 
+                    value={newProduct.name}
+                    onChange={e => setNewProduct({...newProduct, name: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm font-bold focus:outline-none focus:ring-1 focus:ring-forty-primary" 
+                  />
+               </div>
+               <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-black text-gray-700 mb-1">Category</label>
+                    <select 
+                      value={newProduct.category}
+                      onChange={e => setNewProduct({...newProduct, category: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm font-bold focus:outline-none focus:ring-1 focus:ring-forty-primary outline-none text-gray-600"
+                    >
+                      <option>Tablets</option>
+                      <option>Syrups</option>
+                      <option>Injections</option>
+                      <option>Ointments</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-black text-gray-700 mb-1">Price</label>
+                    <input 
+                      type="number" 
+                      placeholder="0.00" 
+                      value={newProduct.price}
+                      onChange={e => setNewProduct({...newProduct, price: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm font-bold focus:outline-none focus:ring-1 focus:ring-forty-primary" 
+                    />
+                  </div>
+               </div>
+               <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-black text-gray-700 mb-1">Initial Stock</label>
+                    <input 
+                      type="number" 
+                      placeholder="0" 
+                      value={newProduct.stock}
+                      onChange={e => setNewProduct({...newProduct, stock: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm font-bold focus:outline-none focus:ring-1 focus:ring-forty-primary" 
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-black text-gray-700 mb-1">Upload Image</label>
+                    <input type="file" className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-[10px] file:font-black file:uppercase file:bg-forty-primary/10 file:text-forty-primary hover:file:bg-forty-primary/20 appearance-none outline-none focus:ring-0" />
+                  </div>
+               </div>
+               <div>
+                  <label className="block text-xs font-black text-gray-700 mb-1">Description</label>
+                  <textarea 
+                    rows="3" 
+                    placeholder="Product description..." 
+                    value={newProduct.description}
+                    onChange={e => setNewProduct({...newProduct, description: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm font-bold focus:outline-none focus:ring-1 focus:ring-forty-primary resize-none"
+                  ></textarea>
+               </div>
+            </div>
+            
+            <div className="p-4 border-t border-gray-100 flex justify-end gap-3 bg-white">
+              <button onClick={() => { setShowAddProduct(false); setNewProduct({ name: '', category: 'Tablets', price: '', stock: '', description: '' }); }} className="px-5 py-2.5 border border-gray-200 text-gray-600 rounded-xl text-xs font-black uppercase hover:bg-gray-50 transition-colors">Cancel</button>
+              <button onClick={handleSaveProduct} className="px-5 py-2.5 bg-forty-primary text-white rounded-xl text-xs font-black uppercase hover:bg-forty-primary/90 transition-colors shadow-sm">Save Product</button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Add Supplier Modal Overlay */}
+      {showAddSupplier && (
+        <div className="fixed inset-0 bg-black/40 z-[100] flex flex-col items-center justify-center p-4">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg flex flex-col overflow-hidden max-h-[90vh]">
+            <div className="p-5 border-b border-gray-100 flex items-center justify-between bg-white">
+              <h2 className="text-xl font-black text-gray-800">Add New Supplier</h2>
+              <button onClick={() => setShowAddSupplier(false)} className="text-red-500 hover:bg-red-50 p-1.5 rounded-lg transition-colors">
+                <X size={24} />
+              </button>
+            </div>
+            
+            <div className="p-5 flex-1 overflow-auto bg-gray-50/50 space-y-4 custom-scrollbar">
+               <div>
+                  <label className="block text-xs font-black text-gray-700 mb-1">Supplier / Company Name *</label>
+                  <input 
+                    type="text" 
+                    placeholder="e.g. GSK Pharmaceuticals" 
+                    value={newSupplier.name}
+                    onChange={e => setNewSupplier({...newSupplier, name: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm font-bold focus:outline-none focus:ring-1 focus:ring-forty-primary" 
+                  />
+               </div>
+               <div>
+                  <label className="block text-xs font-black text-gray-700 mb-1">Contact Person</label>
+                  <input 
+                    type="text" 
+                    placeholder="Name" 
+                    value={newSupplier.contact}
+                    onChange={e => setNewSupplier({...newSupplier, contact: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm font-bold focus:outline-none focus:ring-1 focus:ring-forty-primary" 
+                  />
+               </div>
+               <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-black text-gray-700 mb-1">Phone Number *</label>
+                    <input 
+                      type="tel" 
+                      placeholder="+123..." 
+                      value={newSupplier.phone}
+                      onChange={e => setNewSupplier({...newSupplier, phone: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm font-bold focus:outline-none focus:ring-1 focus:ring-forty-primary" 
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-black text-gray-700 mb-1">Email Address</label>
+                    <input 
+                      type="email" 
+                      placeholder="example@email.com" 
+                      value={newSupplier.email}
+                      onChange={e => setNewSupplier({...newSupplier, email: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm font-bold focus:outline-none focus:ring-1 focus:ring-forty-primary" 
+                    />
+                  </div>
+               </div>
+               <div>
+                  <label className="block text-xs font-black text-gray-700 mb-1">Company Address</label>
+                  <textarea 
+                    rows="2" 
+                    placeholder="Full address..." 
+                    value={newSupplier.address}
+                    onChange={e => setNewSupplier({...newSupplier, address: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm font-bold focus:outline-none focus:ring-1 focus:ring-forty-primary resize-none"
+                  ></textarea>
+               </div>
+            </div>
+            
+            <div className="p-4 border-t border-gray-100 flex justify-end gap-3 bg-white">
+              <button onClick={() => { setShowAddSupplier(false); setNewSupplier({ name: '', contact: '', phone: '', email: '', address: '' }); }} className="px-5 py-2.5 border border-gray-200 text-gray-600 rounded-xl text-xs font-black uppercase hover:bg-gray-50 transition-colors">Cancel</button>
+              <button onClick={handleSaveSupplier} className="px-5 py-2.5 bg-forty-primary text-white rounded-xl text-xs font-black uppercase hover:bg-forty-primary/90 transition-colors shadow-sm">Save Supplier</button>
+            </div>
+          </div>
+        </div>
+      )}
       {/* Stock List Modal Overlay */}
       {showStockList && (
         <div className="fixed inset-0 bg-black/40 z-[100] flex flex-col items-center justify-center p-4">
@@ -380,7 +537,6 @@ export default function PurchaseNew() {
                  <input type="text" placeholder="Search" className="w-full pl-4 pr-10 py-3 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-forty-primary" />
                  <Search className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
                </div>
-
                <div className="bg-white border text-center border-gray-200 rounded-lg overflow-hidden">
                  <table className="w-full text-left border-collapse">
                    <thead>
