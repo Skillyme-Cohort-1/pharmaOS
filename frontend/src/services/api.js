@@ -38,10 +38,10 @@ api.interceptors.response.use(
     const originalRequest = error.config
 
     // Handle 401 Unauthorized with token refresh
-    if (error.response?.status === 401 && 
+    if (error.response?.status === 401 &&
         !originalRequest.url?.includes('/auth/login') &&
         !originalRequest.url?.includes('/auth/refresh')) {
-      
+
       // If already refreshing, queue this request
       if (isRefreshing) {
         return new Promise((resolve, reject) => {
@@ -56,12 +56,17 @@ api.interceptors.response.use(
 
       try {
         const refreshToken = localStorage.getItem('refreshToken')
-        
+
         if (!refreshToken) {
           // No refresh token, clear auth and redirect to login
           localStorage.removeItem('token')
+          localStorage.removeItem('refreshToken')
           delete api.defaults.headers.common['Authorization']
-          window.location.href = '/login'
+          
+          // Only redirect if not already on login page
+          if (window.location.pathname !== '/login') {
+            window.location.href = '/login'
+          }
           return Promise.reject(error)
         }
 
@@ -72,17 +77,17 @@ api.interceptors.response.use(
         )
 
         const { token: newToken, refreshToken: newRefreshToken } = response.data.data
-        
+
         // Save new tokens
         localStorage.setItem('token', newToken)
         localStorage.setItem('refreshToken', newRefreshToken)
-        
+
         // Update default header
         api.defaults.headers.common['Authorization'] = `Bearer ${newToken}`
-        
+
         // Process queued requests
         processQueue(null, newToken)
-        
+
         // Retry original request
         originalRequest.headers.Authorization = `Bearer ${newToken}`
         return api(originalRequest)
@@ -92,7 +97,11 @@ api.interceptors.response.use(
         localStorage.removeItem('token')
         localStorage.removeItem('refreshToken')
         delete api.defaults.headers.common['Authorization']
-        window.location.href = '/login'
+        
+        // Only redirect if not already on login page
+        if (window.location.pathname !== '/login') {
+          window.location.href = '/login'
+        }
         return Promise.reject(error)
       } finally {
         isRefreshing = false
