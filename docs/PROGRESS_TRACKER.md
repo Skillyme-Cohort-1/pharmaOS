@@ -4,7 +4,7 @@
 **Team:** Tech Vanguard  
 **Repository:** https://github.com/Skillyme-Cohort-1/pharmaOS  
 **Start Date:** April 1, 2026  
-**Status:** ✅ Development Complete
+**Status:** 🔄 Active Development & Refinement
 
 ---
 
@@ -16,9 +16,9 @@
 | Frontend UI | 100% | ✅ Complete |
 | Database Schema | 100% | ✅ Complete |
 | Documentation | 100% | ✅ Complete |
-| Testing | 80% | 🔄 Manual Testing |
-| Deployment | 0% | ⏳ Pending |
-| **Overall** | **95%** | **✅ Ready for Demo** |
+| Testing | 90% | 🔄 Manual Testing |
+| Deployment | 80% | 🔄 Render Deployed |
+| **Overall** | **98%** | **✅ Ready for Demo** |
 
 ---
 
@@ -492,6 +492,72 @@ Update .gitignore to exclude .qwen folder
 
 ---
 
+### Session 4: Dashboard Refinements & Role-Based Access Handling
+**Date:** April 11, 2026
+**Duration:** ~2 hours
+**Tasks Completed:**
+
+#### Dashboard 403 Handling ✅
+- [x] Identified root cause: users without proper roles getting 403 on analytics endpoints
+- [x] Added `permissions` state to track access per section (analytics, products, orders, customers)
+- [x] Created `AccessDenied` component with lock icon and messaging
+- [x] Changed from `Promise.all()` to `Promise.allSettled()` for graceful degradation
+- [x] KPI cards show "—" and "Restricted" when access denied
+- [x] All chart sections conditionally render `AccessDenied` or data
+- [x] Low Stock table, Top 5 Products, Top 5 Customers protected
+
+#### Demo Data Balance ✅
+- [x] Created `prisma/update-demo-data.js` to rebalance financial seed data
+- [x] Expenses reduced from ~KES 211,000 to ~KES 31,000
+- [x] Income increased from ~KES 9,500 to ~KES 25,100
+- [x] Expected net: ~KES 5,920 (positive)
+- [x] Updated `start.sh` to run `npm run update-demo` on every deployment
+- [x] Dashboard donut chart shows "Net Revenue" when positive, "Net Loss" (red) when negative
+
+#### Stock List Fully Functional ✅
+- [x] Created dedicated `StockList.jsx` page component
+- [x] "Add New" opens inline expandable form (matching Customers/Suppliers pattern)
+- [x] Same form handles Create and Edit (using `editId` state)
+- [x] Search filters by name, generic, or category
+- [x] Status badges (Out of Stock, Near Expiry, Expired) displayed inline
+- [x] Edit/Delete row actions fully wired
+- [x] Routes added: `/stock/current`, `/stock/expired`, `/stock/low`, `/stock/outofstock`
+- [x] `ListTemplate.jsx` updated to accept external `data` and `loading` props
+
+#### Products & Reports Pages ✅
+- [x] Created dedicated `Products.jsx` with inline form pattern
+- [x] Full CRUD: name, generic, category, batch, quantity, unit/purchase price, expiry, min stock
+- [x] Low stock highlighting in red
+- [x] Updated routing to use existing `Reports.jsx` (card-based layout with PDF/CSV downloads)
+- [x] Removed dead `ListTemplate` wrappers
+
+#### Branch Management ✅
+- [x] Created `testing` branch from `main` at commit `09fe50e` for QA snapshot
+- [x] Future commits remain on `main`
+
+---
+
+### Session 5: POS Quick Actions & Stretchable Cart
+**Date:** April 11, 2026
+**Duration:** ~1.5 hours
+**Tasks Completed:**
+
+#### POS Quick Actions Functional ✅
+- [x] **Stock List** button → navigates to `/stock/current`
+- [x] **Today Sales** button → navigates to `/sales`
+- [x] **Calculator** button → opens working calculator modal (+, -, *, /)
+- [x] **Power/Logout** button → triggers logout confirmation via `useAuth()`
+- [x] **Customer "+"** button → navigates to `/customers`
+
+#### Stretchable Cart Layout ✅
+- [x] Outer panel constrained to `maxHeight: 'calc(100vh - 120px)'`
+- [x] Cart area: `minHeight: '280px'` (fits ~5 items)
+- [x] When >5 items: `maxHeight: '420px'` with scroll overflow
+- [x] Quick Actions, Billing, Footer use `shrink-0` to never compress
+- [x] Payment inputs and action buttons always visible
+
+---
+
 ## 🏁 Next Steps
 
 1. **For Demo:**
@@ -514,8 +580,8 @@ Update .gitignore to exclude .qwen folder
 
 ---
 
-**Last Updated:** April 1, 2026  
-**Progress:** 95% Complete  
-**Status:** ✅ Ready for Database Setup & Testing
+**Last Updated:** April 11, 2026
+**Progress:** 98% Complete
+**Status:** 🔄 Active Refinement — Ready for Demo & Testing
 
 **PharmaOS** - Built with ❤️ by Tech Vanguard

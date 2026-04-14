@@ -5,6 +5,20 @@ const api = axios.create({
   timeout: 10000,
 })
 
+let isRefreshing = false
+let failedQueue = []
+
+const processQueue = (error, token = null) => {
+  failedQueue.forEach(prom => {
+    if (error) {
+      prom.reject(error)
+    } else {
+      prom.resolve(token)
+    }
+  })
+  failedQueue = []
+}
+
 // Request interceptor - always attach token
 api.interceptors.request.use(
   (config) => {
@@ -20,16 +34,72 @@ api.interceptors.request.use(
 // Response interceptor - unwrap .data and handle errors
 api.interceptors.response.use(
   (response) => response.data,
-  (error) => {
-    // Handle 401 Unauthorized globally (but not for login endpoint)
-    if (error.response?.status === 401 && !error.config?.url?.includes('/auth/login')) {
-      if (localStorage.getItem('token')) {
+  async (error) => {
+    const originalRequest = error.config
+
+    // Handle 401 Unauthorized with token refresh
+    if (error.response?.status === 401 && 
+        !originalRequest.url?.includes('/auth/login') &&
+        !originalRequest.url?.includes('/auth/refresh')) {
+      
+      // If already refreshing, queue this request
+      if (isRefreshing) {
+        return new Promise((resolve, reject) => {
+          failedQueue.push({ resolve, reject })
+        }).then(token => {
+          originalRequest.headers.Authorization = `Bearer ${token}`
+          return api(originalRequest)
+        }).catch(err => Promise.reject(err))
+      }
+
+      isRefreshing = true
+
+      try {
+        const refreshToken = localStorage.getItem('refreshToken')
+        
+        if (!refreshToken) {
+          // No refresh token, clear auth and redirect to login
+          localStorage.removeItem('token')
+          delete api.defaults.headers.common['Authorization']
+          window.location.href = '/login'
+          return Promise.reject(error)
+        }
+
+        // Attempt to refresh token
+        const response = await axios.post(
+          `${import.meta.env.VITE_API_URL}/auth/refresh`,
+          { refreshToken }
+        )
+
+        const { token: newToken, refreshToken: newRefreshToken } = response.data.data
+        
+        // Save new tokens
+        localStorage.setItem('token', newToken)
+        localStorage.setItem('refreshToken', newRefreshToken)
+        
+        // Update default header
+        api.defaults.headers.common['Authorization'] = `Bearer ${newToken}`
+        
+        // Process queued requests
+        processQueue(null, newToken)
+        
+        // Retry original request
+        originalRequest.headers.Authorization = `Bearer ${newToken}`
+        return api(originalRequest)
+      } catch (refreshError) {
+        // Refresh failed, clear auth and redirect to login
+        processQueue(refreshError, null)
         localStorage.removeItem('token')
+        localStorage.removeItem('refreshToken')
+        delete api.defaults.headers.common['Authorization']
         window.location.href = '/login'
+        return Promise.reject(error)
+      } finally {
+        isRefreshing = false
       }
     }
 
-    const message = error.response?.data?.error || 'Request failed. Please try again.'
+    const message = error.response?.data?.error || error.response?.data?.message || 'Request failed. Please try again.'
     return Promise.reject(new Error(message))
   }
 )

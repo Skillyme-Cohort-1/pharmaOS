@@ -5,10 +5,11 @@ import morgan from 'morgan'
 import path from 'path'
 import { fileURLToPath } from 'url'
 import { errorHandler } from './middleware/errorHandler.js'
-import { authenticate } from './middleware/auth.js'
+import { authenticate, setTokenBlacklist } from './middleware/auth.js'
 
 // Import routes
 import authRouter from './routes/auth.js'
+import { tokenBlacklist } from './controllers/auth.js'
 import productsRouter from './routes/products.js'
 import ordersRouter from './routes/orders.js'
 import alertsRouter from './routes/alerts.js'
@@ -53,6 +54,9 @@ if (!isProduction) {
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() })
 })
+
+// Connect token blacklist to middleware
+setTokenBlacklist(tokenBlacklist)
 
 // Auth routes (public — no JWT required)
 app.use('/api/auth', authRouter)
