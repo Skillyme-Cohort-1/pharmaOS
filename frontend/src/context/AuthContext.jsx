@@ -207,7 +207,7 @@ export function AuthProvider({ children }) {
   const login = async (email, password) => {
     try {
       const res = await api.post('/auth/login', { email, password })
-      const { user: userData, token: jwt, refreshToken: refreshJwt } = res
+      const { user: userData, token: jwt, refreshToken: refreshJwt } = res.data
 
       // Synchronously set local storage BEFORE navigating to prevent race conditions
       localStorage.setItem('token', jwt)
