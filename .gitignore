@@ -52,6 +52,9 @@ coverage/
 # Qwen settings (exclude from repo)
 .qwen/
 
+# Kiro IDE settings (exclude from repo)
+.kiro/
+
 # Documentation (exclude from repo per requirements)
 PRD.md
 CLAUDE.md

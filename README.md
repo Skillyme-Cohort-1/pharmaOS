@@ -6,7 +6,7 @@ PharmaOS is a comprehensive internal management system designed for pharmacy ope
 
 ## 🚀 Live Demo
 
-[Insert Live URL Here]
+(https://pharmaos-app.netlify.app)
 
 ## 📋 Features
 
