@@ -6,17 +6,39 @@ PharmaOS is a comprehensive internal management system designed for pharmacy ope
 
 ## 🚀 Live Demo
 
-(https://pharmaos-app.netlify.app)
+🔗 **[Live Application](https://pharmaos-app.netlify.app)**
+
+### Demo Credentials
+
+All demo users share the same password: **`pharma123`**
+
+| Role | Email |
+|------|-------|
+| **Super Admin** | `superadmin1@pharmaos.com` |
+| **Admin** | `admin1@pharmaos.com` |
+| **Finance** | `finance@pharmaos.com` |
+| **Manager** | `manager@pharmaos.com` |
+| **Pharmacist** | `pharmacist1@pharmaos.com` |
+
+📖 [Full Demo Credentials](docs/DEMO_CREDENTIALS.md)
 
 ## 📋 Features
 
-- **Inventory Management** — Full CRUD operations with status filtering (active, expired, near-expiry, out-of-stock)
-- **Quick-Edit Modals** — High-fidelity pop-ups with **View** vs **Edit** modes for rapid inventory and order updates.
-- **Order Lifecycle** — Complete order tracking from pending to completion with atomic inventory updates.
-- **Professional Reports** — Export high-quality **PDF (Landscape)** and **CSV** business analytics for Inventory, Expiry, and Sales.
-- **Automated Expiry Detection** — Daily scanning engine with real-time sidebar alerts.
-- **Intelligent Search** — "Ask PharmaOS" prompt-based search on the dashboard for instant data retrieval.
-- **Transaction Audit** — Real-time tracking of every financial change for transparency.
+- **Point of Sale (POS)** — Fast checkout interface with customer search, quick actions, and receipt printing
+- **Sales Management** — Track all sales with dedicated list view and filtering
+- **Inventory Management** — Full CRUD operations with status filtering (current, expired, near-expiry, out-of-stock)
+- **Product Management** — Manage medicines with generic names, batch numbers, pricing, and expiry dates
+- **Order Lifecycle** — Complete order tracking from pending to completion with atomic inventory updates
+- **Purchase Orders** — Create and manage supplier purchase orders with full tracking
+- **Customer & Supplier Management** — Full CRUD with search and inline forms
+- **Financial Tracking** — Income, expenses, tax, and due list management
+- **Professional Reports** — Export high-quality **PDF** and **CSV** business analytics
+- **Automated Expiry Detection** — Daily scanning engine with real-time alerts
+- **Role-Based Access Control** — Granular permissions for Super Admin, Admin, Manager, Pharmacist, Finance, Dispatch, Rider, and Receiving Bay roles
+- **Dual-Token Session Management** — Secure JWT with automatic token refresh
+- **Intelligent Search** — Dashboard search for instant data retrieval
+- **Transaction Audit** — Real-time tracking of every financial change
+- **Quick-Edit Modals** — View and Edit modes for rapid updates
 
 ## 📂 Project Structure
 
@@ -24,23 +46,29 @@ PharmaOS is a comprehensive internal management system designed for pharmacy ope
 graph TD
     Root[pharma-os /] --> BE[backend /]
     Root --> FE[frontend /]
-    
-    BE --> B_Prisma[prisma / schema.prisma]
+
+    BE --> B_Prisma[prisma / schema.prisma, seed.js]
     BE --> B_Src[src /]
     B_Src --> B_App[app.js]
     B_Src --> B_Ctrl[controllers /]
     B_Src --> B_Route[routes /]
     B_Src --> B_Mid[middleware /]
+    B_Src --> B_Lib[lib /]
     B_Src --> B_Utils[utils /]
     B_Src --> B_Jobs[jobs / expiryScanner]
 
     FE --> F_Src[src /]
-    F_Src --> F_Page[pages / Dashboard, Inventory, Reports...]
-    F_page --> F_Comp[components / ui, forms, layout, charts]
+    F_Src --> F_Page[pages /]
+    F_Page --> F_Pages[Dashboard, POS, Sales, Products, Customers, Suppliers, Purchases, Reports, Settings...]
+    F_Src --> F_Comp[components /]
+    F_Comp --> F_UI[ui / Buttons, Inputs, Modals, Tables]
+    F_Comp --> F_Forms[forms / ProductModal, OrderModal]
+    F_Comp --> F_Layout[layout / Sidebar, PageWrapper]
+    F_Comp --> F_Charts[charts / Recharts visualizations]
     F_Src --> F_Svc[services / api.js]
-    F_Src --> F_Ctx[context / Auth, Toast]
+    F_Src --> F_Ctx[context / AuthContext, ToastContext]
     F_Src --> F_Hooks[hooks / useProducts, useOrders]
-    F_Src --> F_Utils[utils / reportGenerators]
+    F_Src --> F_Utils[utils / formatters, reportGenerators]
 ```
 
 PharmaOS is architected as a clean Monorepo-style project with clear separation between the API (Backend) and the Interface (Frontend).
@@ -57,18 +85,28 @@ Built with **Express**, **Prisma**, and **PostgreSQL**.
   - `jobs/` — Scheduled tasks, specifically the **Daily Expiry Scanner**.
 
 ### 🎨 Frontend (/frontend)
-Built with **React 18**, **Vite**, and **Vanilla/Tailwind CSS**.
+Built with **React 18**, **Vite**, and **Tailwind CSS**.
 - `src/`
-  - `pages/` — The high-level page views (Dashboard, Inventory, Reports, etc.).
+  - `pages/` — The high-level page views:
+    - **Dashboard** — Analytics, KPIs, charts, and quick actions
+    - **Sales** — POSView (Point of Sale) and SalesList
+    - **Products** — Product management with inline forms
+    - **StockList** — Inventory views (current, expired, low, out-of-stock)
+    - **Customers & Suppliers** — Full CRUD with search
+    - **Purchases** — Purchase order management
+    - **Reports** — PDF/CSV export for inventory, expiry, sales
+    - **Financial** — Incomes, Expenses, Tax, DueList
+    - **Settings** — System configuration
   - `components/`
-    - `ui/` — Atomic, reusable UI components (Buttons, Inputs, Modals, Tables).
-    - `forms/` — Complex, state-managed forms like the new `ProductModal` and `OrderModal`.
-    - `layout/` — Structural components like the `Sidebar` and `PageWrapper`.
-    - `charts/` — Data visualization using Recharts.
-  - `context/` — Global state management for Authentication and UI Toasts.
-  - `services/` — The API communication layer (Axios instances).
-  - `utils/` — Formatting helpers for currency, dates, and the **PDF Report Generators**.
-  - `hooks/` — Custom React hooks for standardized data fetching.
+    - `ui/` — Atomic, reusable UI components (Buttons, Inputs, Modals, Tables, Badges)
+    - `forms/` — Complex, state-managed forms like `ProductModal` and `OrderModal`
+    - `layout/` — Structural components like `Sidebar` and `PageWrapper`
+    - `charts/` — Data visualization using Recharts
+    - `templates/` — ListTemplate, FormTemplate for consistent page layouts
+  - `context/` — Global state management for Authentication (`AuthContext`) and UI Toasts (`ToastContext`)
+  - `services/` — The API communication layer (Axios instances)
+  - `utils/` — Formatting helpers for currency, dates, and **PDF Report Generators**
+  - `hooks/` — Custom React hooks for standardized data fetching
 
 ---
 
@@ -76,20 +114,25 @@ Built with **React 18**, **Vite**, and **Vanilla/Tailwind CSS**.
 
 ### Frontend
 - React 18 + Vite
-- Tailwind CSS
+- Tailwind CSS + PostCSS
 - React Router v6
 - Recharts (Visualization)
 - **jsPDF + AutoTable** (Reporting)
 - Lucide React (Icons)
 - Axios
+- Framer Motion (Animations)
+- html2canvas (Screenshot export)
 
 ### Backend
 - Node.js + Express
 - **Prisma ORM**
 - PostgreSQL
 - node-cron (Scheduling)
-- Multer (CSV handling)
+- Multer (CSV/file handling)
 - Zod (Validation schema)
+- JWT (Authentication with refresh tokens)
+- bcrypt (Password hashing)
+- PDFKit (Report generation)
 
 ---
 
@@ -134,19 +177,23 @@ npm run dev
 
 ## 📚 Documentation & Guides
 
-For deeper technical dives, refer to our specialized guides:
+For deeper technical dives, refer to our specialized guides in the [`docs/`](docs/) folder:
 
-- [API Reference](API.md) — Detailed request/response schemas for all endpoints.
-- [Database Schema](DATABASE_SETUP.md) — ER diagrams and table structures.
-- [Design Specification](design.md) — UI/UX principles and color tokens.
-- [Deployment Guide](C:\Users\victo\.gemini\antigravity\brain\59abee1a-915a-451d-b29a-93848b90b93a/deployment_guide.md) — Production rollout instructions.
+- [Deployment Guide](docs/DEPLOYMENT.md) — Production rollout instructions (Render + Netlify)
+- [Demo Credentials](docs/DEMO_CREDENTIALS.md) — All demo user logins
+- [Design Specification](docs/design.md) — UI/UX principles and color tokens
+- [Session Management](docs/SESSION_MANAGEMENT.md) — Dual-token JWT with auto-refresh
+- [Auth Guide](docs/AUTH_GUIDE.md) — Authentication and role-based access control
+- [Mobile Responsiveness](docs/MOBILE_RESPONSIVENESS.md) — Responsive design guidelines
+- [Progress Tracker](docs/PROGRESS_TRACKER.md) — Feature development history
+- [Status](docs/STATUS.md) — Current project status
 
 ---
 
 ## 👥 Team
 
 **Tech Vanguard**
-- Victor Chogo
+- [Victor Chogo](https://github.com/Skillyme-Cohort-1) — Full-Stack Developer
 - Daisy Bless
 - Mukhongo Vivian
 - Kioko Julius
