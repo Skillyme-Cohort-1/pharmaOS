@@ -6,6 +6,7 @@ import ProtectedRoute from './components/auth/ProtectedRoute'
 import Dashboard from './pages/Dashboard'
 import Login from './pages/Login'
 import POSView from './pages/Sales/POSView'
+import PharmacistPOS from './pages/Sales/PharmacistPOS'
 import SalesList from './pages/Sales/SalesList'
 import Customers from './pages/Customers'
 import Suppliers from './pages/Suppliers'
@@ -47,6 +48,7 @@ function App() {
 
             {/* Sales */}
             <Route path="/sales/new" element={<ProtectedRoute><POSView /></ProtectedRoute>} />
+            <Route path="/pos" element={<ProtectedRoute><PharmacistPOS /></ProtectedRoute>} />
             <Route path="/sales" element={<ProtectedRoute><SalesList /></ProtectedRoute>} />
 
             {/* Purchases */}

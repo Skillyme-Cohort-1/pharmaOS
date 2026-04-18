@@ -1,5 +1,7 @@
 import { useState, useMemo, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { jsPDF } from 'jspdf'
+import autoTable from 'jspdf-autotable'
 import { 
   Search, 
   ShoppingCart, 
@@ -54,6 +56,7 @@ export default function PurchaseNew() {
   const [discount, setDiscount] = useState(0)
   const [deliveryCost, setDeliveryCost] = useState(0)
   const [taxPercent, setTaxPercent] = useState(0)
+  const [otherCharge, setOtherCharge] = useState(0)
   const [showAddProduct, setShowAddProduct] = useState(false)
   const [showAddSupplier, setShowAddSupplier] = useState(false)
   const handleSaveProduct = () => {
@@ -100,9 +103,116 @@ export default function PurchaseNew() {
     }))
   }
   const removeFromCart = (id) => setCart(prev => prev.filter(item => item.id !== id))
+
+  // -- Generate PDF Receipt -------------------------------------------------
+  const generatePDF = () => {
+    const doc = new jsPDF()
+    const receiptNo = 'P' + Date.now().toString().slice(-6)
+    const date = new Date().toLocaleString()
+
+    // Header
+    doc.setFontSize(20)
+    doc.setTextColor(0, 168, 107)
+    doc.text('PharmaOS', 105, 20, { align: 'center' })
+
+    doc.setFontSize(12)
+    doc.setTextColor(0, 0, 0)
+    doc.text('PURCHASE RECEIPT', 105, 30, { align: 'center' })
+
+    // Receipt Info
+    doc.setFontSize(10)
+    doc.text(`Receipt No: ${receiptNo}`, 14, 45)
+    doc.text(`Date: ${date}`, 14, 52)
+    doc.text(`Supplier: ${supplier}`, 14, 59)
+    doc.text(`Invoice No: ${invoiceNo || 'N/A'}`, 14, 66)
+    doc.text(`Payment: ${paymentMethod}`, 14, 73)
+    doc.text(`Items: ${totalItems} (${totalQty} qty)`, 14, 80)
+
+    // Items Table
+    const items = cart.map(item => [
+      item.name,
+      item.batch || 'N/A',
+      item.quantity.toString(),
+      formatCurrency(item.price),
+      formatCurrency(item.price * item.quantity)
+    ])
+
+    autoTable(doc, {
+      startY: 88,
+      head: [['Item', 'Batch', 'Qty', 'Price', 'Total']],
+      body: items,
+      theme: 'striped',
+      headStyles: { fillColor: [0, 168, 107], textColor: 255 },
+      styles: { fontSize: 9 },
+      columnStyles: {
+        0: { cellWidth: 60 },
+        1: { cellWidth: 30 },
+        2: { cellWidth: 20, halign: 'center' },
+        3: { cellWidth: 35, halign: 'right' },
+        4: { cellWidth: 35, halign: 'right' }
+      }
+    })
+
+    // Totals - lastAutoTable is added to doc object by the plugin
+    const finalY = (doc.lastAutoTable?.finalY || 150) + 10
+    doc.setFontSize(10)
+    doc.text(`Subtotal: ${formatCurrency(subtotal)}`, 150, finalY, { align: 'right' })
+    doc.text(`Discount: ${formatCurrency(discount)}`, 150, finalY + 7, { align: 'right' })
+    doc.text(`Tax (${taxPercent}%): ${formatCurrency(taxAmount)}`, 150, finalY + 14, { align: 'right' })
+    doc.text(`Shipping: ${formatCurrency(deliveryCost)}`, 150, finalY + 21, { align: 'right' })
+    doc.text(`Other: ${formatCurrency(otherCharge)}`, 150, finalY + 28, { align: 'right' })
+
+    doc.setFontSize(12)
+    doc.setFont(undefined, 'bold')
+    doc.text(`TOTAL PAYABLE: ${formatCurrency(total)}`, 150, finalY + 40, { align: 'right' })
+
+    doc.setFont(undefined, 'normal')
+    doc.setFontSize(10)
+    doc.text(`Amount Paid: ${formatCurrency(payAmount)}`, 150, finalY + 50, { align: 'right' })
+    if (changeAmount > 0) {
+      doc.text(`Change: ${formatCurrency(changeAmount)}`, 150, finalY + 57, { align: 'right' })
+    }
+    if (dueAmount > 0) {
+      doc.setTextColor(255, 0, 0)
+      doc.text(`Amount Due: ${formatCurrency(dueAmount)}`, 150, finalY + 64, { align: 'right' })
+    }
+
+    // Footer
+    doc.setTextColor(100, 100, 100)
+    doc.setFontSize(9)
+    doc.text('Thank you for your business!', 105, finalY + 65, { align: 'center' })
+    doc.text('PharmaOS - Purchase Management System', 105, finalY + 72, { align: 'center' })
+
+    return doc
+  }
+
+  // -- Save Handler ---------------------------------------------------------
+  const handleSave = async (print = false) => {
+    if (cart.length === 0) { alert('Add at least one product'); return }
+
+    // Here you would typically save to backend
+    // For now, just generate PDF if print is requested
+    if (print) {
+      const doc = generatePDF()
+      doc.save(`purchase-receipt-${Date.now()}.pdf`)
+    }
+
+    // Reset form
+    setCart([])
+    setPayAmount(0)
+    setDiscount(0)
+    setDeliveryCost(0)
+    setOtherCharge(0)
+    setTaxPercent(0)
+    setInvoiceNo('')
+    setNotes('')
+  }
+
+  const totalItems = useMemo(() => cart.length, [cart])
+  const totalQty = useMemo(() => cart.reduce((sum, item) => sum + item.quantity, 0), [cart])
   const subtotal = useMemo(() => cart.reduce((sum, item) => sum + (item.price * item.quantity), 0), [cart])
   const taxAmount = useMemo(() => (subtotal * taxPercent) / 100, [subtotal, taxPercent])
-  const total = useMemo(() => subtotal + taxAmount - discount + deliveryCost, [subtotal, taxAmount, discount, deliveryCost])
+  const total = useMemo(() => subtotal + taxAmount - discount + deliveryCost + otherCharge, [subtotal, taxAmount, discount, deliveryCost, otherCharge])
   const changeAmount = useMemo(() => Math.max(0, payAmount - total), [payAmount, total])
   const dueAmount = useMemo(() => Math.max(0, total - payAmount), [total, payAmount])
   const filteredProducts = products.filter(p => p.name.toLowerCase().includes(searchQuery.toLowerCase()))
@@ -221,7 +331,7 @@ export default function PurchaseNew() {
                </div>
             </div>
             {/* Transaction Table */}
-            <div className="flex-1 overflow-x-auto custom-scrollbar">
+            <div className="flex-1 min-h-[250px] overflow-x-auto overflow-y-auto custom-scrollbar">
               <table className="w-full text-left border-collapse min-w-[500px]">
                 <thead className="sticky top-0 bg-white z-10">
                   <tr className="border-b border-gray-100">
@@ -238,40 +348,41 @@ export default function PurchaseNew() {
                 <tbody className="divide-y divide-gray-50">
                   {cart.length === 0 ? (
                     <tr>
-                       <td colSpan="8" className="py-20 text-center text-gray-400">
+                       <td colSpan="8" className="py-24 text-center text-gray-400">
                           <div className="flex flex-col items-center opacity-40">
-                             <ShoppingCart size={32} className="mb-2" />
+                             <ShoppingCart size={40} className="mb-3" />
                              <span className="text-sm font-medium">No Items Found</span>
+                             <span className="text-xs mt-1">Add products to get started</span>
                           </div>
                        </td>
                     </tr>
                   ) : (
-                    cart.map(item => (
-                      <tr key={item.id} className="hover:bg-gray-50/50 transition-colors">
-                        <td className="px-2 py-2 text-[10px] font-bold text-gray-700 min-w-[80px] break-words">{item.name}</td>
-                        <td className="px-2 py-2">
-                           <input type="text" value={item.batch} onChange={e => updateCartItem(item.id, 'batch', e.target.value)} className="w-16 px-1 py-1 border border-gray-200 rounded text-[10px] font-bold outline-none" />
+                    cart.map((item, index) => (
+                      <tr key={item.id} className={`hover:bg-forty-primary/5 transition-colors ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'}`}>
+                        <td className="px-2 py-3 text-[11px] font-bold text-gray-700 min-w-[80px] break-words">{item.name}</td>
+                        <td className="px-2 py-3">
+                           <input type="text" value={item.batch} onChange={e => updateCartItem(item.id, 'batch', e.target.value)} className="w-16 px-2 py-1.5 border border-gray-200 rounded text-[11px] font-bold outline-none focus:border-forty-primary" />
                         </td>
-                        <td className="px-2 py-2">
-                           <input type="date" value={item.expiryDate} onChange={e => updateCartItem(item.id, 'expiryDate', e.target.value)} className="w-20 px-1 py-1 border border-gray-200 rounded text-[10px] font-bold outline-none" />
+                        <td className="px-2 py-3">
+                           <input type="date" value={item.expiryDate} onChange={e => updateCartItem(item.id, 'expiryDate', e.target.value)} className="w-20 px-2 py-1.5 border border-gray-200 rounded text-[11px] font-bold outline-none focus:border-forty-primary" />
                         </td>
-                        <td className="px-2 py-2 text-center">
-                           <input type="number" value={item.price} onChange={e => updateCartItem(item.id, 'price', e.target.value)} className="w-14 px-1 py-1 border border-gray-200 rounded text-[10px] font-bold text-center outline-none" />
+                        <td className="px-2 py-3 text-center">
+                           <input type="number" value={item.price} onChange={e => updateCartItem(item.id, 'price', e.target.value)} className="w-14 px-2 py-1.5 border border-gray-200 rounded text-[11px] font-bold text-center outline-none focus:border-forty-primary" />
                         </td>
-                        <td className="px-2 py-2 text-center">
-                           <input type="number" placeholder="Optional" value={item.sellingPrice || ''} onChange={e => updateCartItem(item.id, 'sellingPrice', e.target.value)} className="w-16 px-1 py-1 border border-gray-200 rounded text-[10px] font-bold text-center outline-none text-gray-500" />
+                        <td className="px-2 py-3 text-center">
+                           <input type="number" placeholder="Optional" value={item.sellingPrice || ''} onChange={e => updateCartItem(item.id, 'sellingPrice', e.target.value)} className="w-16 px-2 py-1.5 border border-gray-200 rounded text-[11px] font-bold text-center outline-none text-gray-500 focus:border-forty-primary" />
                         </td>
-                        <td className="px-2 py-2 text-center">
+                        <td className="px-2 py-3 text-center">
                           <input 
                             type="number" min="1" 
                             value={item.quantity} 
                             onChange={(e) => updateCartItem(item.id, 'quantity', parseInt(e.target.value) || 0)}
-                            className="w-12 px-1 py-1 border border-gray-200 rounded text-[10px] font-bold text-center outline-none focus:border-forty-primary"
+                            className="w-12 px-2 py-1.5 border border-gray-200 rounded text-[11px] font-bold text-center outline-none focus:border-forty-primary"
                           />
                         </td>
-                        <td className="px-2 py-2 text-[10px] font-black text-forty-primary text-right">{formatCurrency(item.price * item.quantity)}</td>
-                        <td className="px-2 py-2 text-center">
-                          <button onClick={() => removeFromCart(item.id)} className="p-1 px-1.5 rounded bg-red-50 text-red-500 hover:bg-red-100 transition-colors">
+                        <td className="px-2 py-3 text-[11px] font-black text-forty-primary text-right">{formatCurrency(item.price * item.quantity)}</td>
+                        <td className="px-2 py-3 text-center">
+                          <button onClick={() => removeFromCart(item.id)} className="p-1.5 px-2 rounded bg-red-50 text-red-500 hover:bg-red-100 transition-colors">
                             <X size={14} />
                           </button>
                         </td>
@@ -281,85 +392,127 @@ export default function PurchaseNew() {
                 </tbody>
               </table>
             </div>
-            {/* Billing Section */}
-            <div className="p-4 border-t border-gray-100">
-              <div className="grid grid-cols-2 gap-4">
-                {/* Left Column - Payment Inputs */}
-                <div className="space-y-3">
-                  <div className="grid grid-cols-[80px_1fr] items-center gap-2">
-                    <label className="text-[11px] font-bold text-gray-500 leading-tight">Payment Method</label>
-                    <select value={paymentMethod} onChange={e => setPaymentMethod(e.target.value)} className="w-full px-2 py-1.5 bg-gray-50 border border-gray-200 rounded text-xs font-bold outline-none text-gray-600">
-                       <option>Cash</option><option>Bank Transfer</option><option>Mobile Money</option><option>Credit</option>
-                    </select>
-                  </div>
-                  <div className="grid grid-cols-[80px_1fr] items-center gap-2">
-                    <label className="text-[11px] font-bold text-gray-500 leading-tight">Receive Amount</label>
+            {/* -- Billing Section -- */}
+            <div className="p-4 border-t border-gray-100 shrink-0">
+              <div className="grid grid-cols-2 gap-x-5">
+
+                {/* Left column: payment fields */}
+                <div className="space-y-2.5">
+                  <div>
+                    <label className="block text-[10px] font-semibold text-gray-500 mb-1">Receive Amount</label>
                     <input
-                      type="number" value={payAmount} onChange={(e) => setPayAmount(parseFloat(e.target.value) || 0)}
-                      className="w-full px-2 py-1.5 bg-white border border-gray-200 rounded text-xs font-bold focus:border-forty-primary outline-none"
+                      type="number" min="0" placeholder="0"
+                      value={payAmount}
+                      onChange={(e) => setPayAmount(parseFloat(e.target.value) || 0)}
+                      className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm font-bold focus:border-forty-primary outline-none"
                     />
                   </div>
-                  <div className="grid grid-cols-[80px_1fr] items-center gap-2">
-                    <label className="text-[11px] font-bold text-gray-500 leading-tight">Change Amount</label>
-                    <input type="number" readOnly value={changeAmount} className="w-full px-2 py-1.5 bg-gray-50 border border-gray-200 rounded text-xs font-bold text-gray-500 outline-none" />
+                  <div>
+                    <label className="block text-[10px] font-semibold text-gray-500 mb-1">Change Amount</label>
+                    <input readOnly value={changeAmount.toFixed(2)}
+                      className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm font-bold text-gray-500 outline-none" />
                   </div>
-                  <div className="grid grid-cols-[80px_1fr] items-center gap-2">
-                    <label className="text-[11px] font-bold text-gray-500 leading-tight">Due Amount</label>
-                    <input type="number" readOnly value={dueAmount} className="w-full px-2 py-1.5 bg-gray-50 border border-gray-200 rounded text-xs font-bold text-gray-500 outline-none" />
+                  <div>
+                    <label className="block text-[10px] font-semibold text-gray-500 mb-1">Due Amount</label>
+                    <input readOnly value={dueAmount.toFixed(2)}
+                      className={`w-full px-3 py-2 border rounded-lg text-sm font-bold outline-none ${dueAmount > 0 ? 'bg-red-50 border-red-200 text-red-600' : 'bg-gray-50 border-gray-200 text-gray-500'}`} />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-semibold text-gray-500 mb-1">Payment Type</label>
+                    <div className="relative">
+                      <select
+                        value={paymentMethod}
+                        onChange={(e) => setPaymentMethod(e.target.value)}
+                        className="w-full pl-3 pr-8 py-2 bg-white border border-gray-200 rounded-lg text-sm font-bold focus:border-forty-primary outline-none appearance-none"
+                      >
+                        <option>Cash</option>
+                        <option>Bank Transfer</option>
+                        <option>Mobile Money</option>
+                        <option>Credit</option>
+                      </select>
+                      <ChevronDown size={14} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                    </div>
                   </div>
                 </div>
-                {/* Right Column - VAT, Discount, Delivery */}
-                <div className="space-y-3 flex flex-col justify-between h-full py-1">
-                   {/* Total Summary */}
-                   <div className="flex justify-between items-center px-1 mb-1">
-                      <p className="text-sm font-black text-gray-800">Total</p>
-                      <p className="text-lg font-black text-gray-900">{formatCurrency(total)}</p>
-                   </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-[11px] font-bold text-gray-500 w-12 text-left shrink-0">Tax (%)</span>
-                    <input type="number" value={taxPercent} onChange={e => setTaxPercent(parseFloat(e.target.value)||0)} className="flex-1 px-2 py-1.5 bg-white border border-gray-200 rounded text-xs font-bold outline-none" />
-                    <input type="text" readOnly className="w-16 px-2 py-1.5 bg-gray-50 border border-gray-200 rounded text-xs font-bold text-center text-gray-400" value={formatCurrency(taxAmount)} />
+
+                {/* Right column: total + adjustments */}
+                <div className="space-y-2.5">
+                  {/* Total Item */}
+                  <div className="flex items-center justify-between py-1 border-b border-gray-100">
+                    <span className="text-xs font-bold text-gray-600">TOTAL ITEM</span>
+                    <span className="text-xs font-black text-gray-900">{totalItems} ({totalQty})</span>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-[11px] font-bold text-gray-500 w-12 text-left shrink-0">Discount</span>
-                    <select className="flex-1 px-2 py-1.5 bg-white border border-gray-200 rounded text-xs font-bold outline-none text-gray-400">
-                      <option>Fixed</option>
-                    </select>
+
+                  {/* Total */}
+                  <div className="flex items-center justify-between py-1">
+                    <span className="text-xs font-bold text-gray-600">TOTAL</span>
+                    <span className="text-sm font-black text-gray-900">{formatCurrency(subtotal)}</span>
+                  </div>
+
+                  {/* Discount */}
+                  <div>
+                    <label className="block text-[10px] font-semibold text-gray-500 mb-1">DISCOUNT</label>
                     <input
-                      type="number" value={discount} onChange={(e) => setDiscount(parseFloat(e.target.value) || 0)}
-                      className="w-16 px-2 py-1.5 bg-white border border-gray-200 rounded text-xs font-bold text-center focus:border-forty-primary outline-none"
+                      type="number" min="0" value={discount}
+                      onChange={(e) => setDiscount(parseFloat(e.target.value) || 0)}
+                      className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm font-bold focus:border-forty-primary outline-none"
                     />
                   </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-[11px] font-bold text-gray-500 w-12 text-left shrink-0 leading-tight">Delivery Cost</span>
+
+                  {/* Tax Amount (%) */}
+                  <div>
+                    <label className="block text-[10px] font-semibold text-gray-500 mb-1">TAX AMOUNT (%)</label>
+                    <div className="flex gap-1">
+                      <input
+                        type="number" min="0" value={taxPercent}
+                        onChange={(e) => setTaxPercent(parseFloat(e.target.value) || 0)}
+                        className="w-16 px-2 py-2 bg-white border border-gray-200 rounded-lg text-xs font-bold text-center focus:border-forty-primary outline-none"
+                      />
+                      <input readOnly value={formatCurrency(taxAmount)}
+                        className="flex-1 px-2 py-2 bg-gray-50 border border-gray-200 rounded-lg text-xs font-bold text-center text-gray-500 outline-none" />
+                    </div>
+                  </div>
+
+                  {/* Shipping Charge */}
+                  <div>
+                    <label className="block text-[10px] font-semibold text-gray-500 mb-1">SHIPPING CHARGE</label>
                     <input
-                      type="number" value={deliveryCost} onChange={(e) => setDeliveryCost(parseFloat(e.target.value) || 0)}
-                      className="w-full flex-1 px-2 py-1.5 bg-white border border-gray-200 rounded text-xs font-bold focus:border-forty-primary outline-none text-right"
+                      type="number" min="0" value={deliveryCost}
+                      onChange={(e) => setDeliveryCost(parseFloat(e.target.value) || 0)}
+                      className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm font-bold focus:border-forty-primary outline-none"
                     />
+                  </div>
+
+                  {/* Other Charge */}
+                  <div>
+                    <label className="block text-[10px] font-semibold text-gray-500 mb-1">OTHER CHARGE</label>
+                    <input
+                      type="number" min="0" value={otherCharge}
+                      onChange={(e) => setOtherCharge(parseFloat(e.target.value) || 0)}
+                      className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm font-bold focus:border-forty-primary outline-none"
+                    />
+                  </div>
+
+                  {/* TOTAL PAYABLE */}
+                  <div className="flex items-center justify-between py-2 border-t-2 border-gray-200 mt-2">
+                    <span className="text-sm font-black text-gray-800">TOTAL PAYABLE</span>
+                    <span className="text-lg font-black text-forty-primary">{formatCurrency(total)}</span>
                   </div>
                 </div>
-              </div>
-              
-              {/* Optional Notes */}
-              <div className="mt-3">
-                 <textarea 
-                    rows={1} placeholder="Optional notes / damaged items..." value={notes} onChange={e => setNotes(e.target.value)}
-                    className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-forty-primary resize-none"
-                 />
               </div>
             </div>
             {/* Final Footer Buttons */}
             <div className="grid grid-cols-3 gap-3 p-4 bg-gray-50 border-t border-gray-100 mt-auto shrink-0">
                <button 
-                onClick={() => { setCart([]); setPayAmount(0); setDiscount(0); setDeliveryCost(0); }}
+                onClick={() => { setCart([]); setPayAmount(0); setDiscount(0); setDeliveryCost(0); setTaxPercent(0); setOtherCharge(0); }}
                 className="py-3 bg-white border border-[#FF6565] text-[#FF6565] rounded-xl text-xs font-black uppercase hover:bg-red-50 transition-colors shadow-sm"
                >
                  Reset
                </button>
-               <button className="py-3 bg-white border border-forty-primary text-forty-primary rounded-xl text-xs font-black uppercase hover:bg-teal-50 transition-colors shadow-sm">
+               <button onClick={() => handleSave(false)} className="py-3 bg-white border border-forty-primary text-forty-primary rounded-xl text-xs font-black uppercase hover:bg-teal-50 transition-colors shadow-sm">
                  Save
                </button>
-               <button className="py-3 bg-forty-primary border border-forty-primary text-white rounded-xl text-xs font-black uppercase hover:bg-forty-primary/90 transition-all shadow-md">
+               <button onClick={() => handleSave(true)} className="py-3 bg-forty-primary border border-forty-primary text-white rounded-xl text-xs font-black uppercase hover:bg-forty-primary/90 transition-all shadow-md">
                  Save & Print
                </button>
             </div>

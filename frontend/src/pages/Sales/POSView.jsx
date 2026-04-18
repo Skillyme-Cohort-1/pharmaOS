@@ -1,26 +1,16 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Calculator, Plus, Power, X, ChevronDown, ShoppingCart } from 'lucide-react'
+import { jsPDF } from 'jspdf'
+import autoTable from 'jspdf-autotable'
 import PageWrapper from '../../components/layout/PageWrapper'
 import ProductCard from '../../components/ui/ProductCard'
 import { useAuth } from '../../context/AuthContext'
 import { useToast } from '../../context/ToastContext'
 import { useCustomers } from '../../hooks/useCustomers'
-import { ordersApi } from '../../services/api'
+import { productsApi, ordersApi } from '../../services/api'
 import { formatCurrency } from '../../utils/formatCurrency'
 
-const MOCK_POS_PRODUCTS = [
-  { id: '1', name: 'Paracetamol Tablets IP', price: 1638.75, stock: 120, image: '/images/products/placeholder.svg' },
-  { id: '2', name: 'Curafin 5ml Syrup',      price: 942.76,  stock: 45,  image: '/images/products/placeholder.svg' },
-  { id: '3', name: 'Avaspray Nasal 120ml',   price: 831.60,  stock: 12,  image: '/images/products/placeholder.svg' },
-  { id: '4', name: 'Dupabaston 10mg',        price: 847.11,  stock: 0,   image: '/images/products/placeholder.svg' },
-  { id: '5', name: 'Omeprazole 20mg',        price: 1007.60, stock: 500, image: '/images/products/placeholder.svg' },
-  { id: '6', name: 'Coralcal DX Vital',      price: 625.40,  stock: 30,  image: '/images/products/placeholder.svg' },
-  { id: '7', name: 'Elvive Hair Care',        price: 345,     stock: 15,  image: '/images/products/placeholder.svg' },
-  { id: '8', name: 'Bizoran 10/20 MG',       price: 648.66,  stock: 8,   image: '/images/products/placeholder.svg' },
-  { id: '9', name: 'Vitalzin Multi-Syrup',   price: 529.58,  stock: 5,   image: '/images/products/placeholder.svg' },
-  { id: '10', name: 'Velkin Nasal Drop',     price: 427.14,  stock: 20,  image: '/images/products/placeholder.svg' },
-]
 
 export default function POSView() {
   const navigate  = useNavigate()
@@ -29,6 +19,7 @@ export default function POSView() {
   const { customers } = useCustomers()
 
   const [searchQuery,   setSearchQuery]   = useState('')
+  const [products,      setProducts]      = useState([])
   const [cart,          setCart]          = useState([])
   const [customerId,    setCustomerId]    = useState('')
   const [paymentType,   setPaymentType]   = useState('Cash')
@@ -36,12 +27,27 @@ export default function POSView() {
   const [discount,      setDiscount]      = useState(0)
   const [discountType,  setDiscountType]  = useState('fixed')
   const [deliveryCost,  setDeliveryCost]  = useState(0)
+  const [taxPercent,    setTaxPercent]    = useState(0)
+  const [otherCharge,   setOtherCharge]   = useState(0)
   const [saving,        setSaving]        = useState(false)
   const [showCalc,      setShowCalc]      = useState(false)
   const [calcDisplay,   setCalcDisplay]   = useState('0')
   const [calcExpr,      setCalcExpr]      = useState('')
 
-  // ── Calculator ──────────────────────────────────────────────────────────
+  // Load products from API
+  useEffect(() => {
+    const loadProducts = async () => {
+      try {
+        const res = await productsApi.getAll({ limit: 100 })
+        setProducts(res.data || [])
+      } catch (err) {
+        console.error('Failed to load products:', err)
+      }
+    }
+    loadProducts()
+  }, [])
+
+  // -- Calculator -----------------------------------------------------------
   const handleCalc = (v) => {
     if (v === 'C') { setCalcDisplay('0'); setCalcExpr('') }
     else if (v === '=') {
@@ -57,47 +63,141 @@ export default function POSView() {
     }
   }
 
-  // ── Cart ─────────────────────────────────────────────────────────────────
+  // -- Cart ----------------------------------------------------------------
   const addToCart = (p) => {
-    if (p.stock <= 0) return
+    if (p.quantity <= 0) return
     setCart(prev => {
       const ex = prev.find(i => i.id === p.id)
       if (ex) return prev.map(i => i.id === p.id ? { ...i, quantity: i.quantity + 1 } : i)
-      return [...prev, { ...p, quantity: 1, batch: 'B' + Math.floor(Math.random() * 900 + 100) }]
+      return [...prev, { ...p, price: p.unitPrice, quantity: 1, batch: 'B' + Math.floor(Math.random() * 900 + 100) }]
     })
   }
   const updateQty    = (id, delta) => setCart(prev => prev.map(i => i.id === id ? { ...i, quantity: Math.max(1, i.quantity + delta) } : i))
   const removeItem   = (id) => setCart(prev => prev.filter(i => i.id !== id))
-  const resetAll     = () => { setCart([]); setReceiveAmount(''); setDiscount(0); setDeliveryCost(0); setCustomerId(''); setPaymentType('Cash') }
+  const resetAll     = () => { setCart([]); setReceiveAmount(''); setDiscount(0); setDeliveryCost(0); setTaxPercent(0); setOtherCharge(0); setCustomerId(''); setPaymentType('Cash') }
 
-  // ── Totals ────────────────────────────────────────────────────────────────
+  // -- Totals ---------------------------------------------------------------
+  const totalItems     = useMemo(() => cart.length, [cart])
+  const totalQty       = useMemo(() => cart.reduce((sum, i) => sum + i.quantity, 0), [cart])
   const subtotal       = useMemo(() => cart.reduce((s, i) => s + i.price * i.quantity, 0), [cart])
   const discountAmount = useMemo(() => discountType === 'percent' ? (subtotal * discount) / 100 : discount, [subtotal, discount, discountType])
-  const total          = useMemo(() => Math.max(0, subtotal - discountAmount + deliveryCost), [subtotal, discountAmount, deliveryCost])
+  const taxAmount      = useMemo(() => (subtotal * taxPercent) / 100, [subtotal, taxPercent])
+  const total          = useMemo(() => Math.max(0, subtotal - discountAmount + taxAmount + deliveryCost + otherCharge), [subtotal, discountAmount, taxAmount, deliveryCost, otherCharge])
   const received       = parseFloat(receiveAmount) || 0
   const changeAmt      = useMemo(() => Math.max(0, received - total), [received, total])
   const dueAmt         = useMemo(() => Math.max(0, total - received), [total, received])
 
-  // ── Save ──────────────────────────────────────────────────────────────────
+  // -- Generate PDF Receipt -------------------------------------------------
+  const generatePDF = () => {
+    const doc = new jsPDF()
+    const selectedCustomer = customers.find(c => c.id === customerId)
+    const customerName = selectedCustomer?.name || 'Walk In Customer'
+    const customerPhone = selectedCustomer?.phone || '0000000000'
+    const receiptNo = 'R' + Date.now().toString().slice(-6)
+    const date = new Date().toLocaleString()
+
+    // Header
+    doc.setFontSize(20)
+    doc.setTextColor(0, 168, 107)
+    doc.text('PharmaOS', 105, 20, { align: 'center' })
+
+    doc.setFontSize(12)
+    doc.setTextColor(0, 0, 0)
+    doc.text('SALES RECEIPT', 105, 30, { align: 'center' })
+
+    // Receipt Info
+    doc.setFontSize(10)
+    doc.text(`Receipt No: ${receiptNo}`, 14, 45)
+    doc.text(`Date: ${date}`, 14, 52)
+    doc.text(`Customer: ${customerName}`, 14, 59)
+    doc.text(`Phone: ${customerPhone}`, 14, 66)
+    doc.text(`Payment: ${paymentType}`, 14, 73)
+    doc.text(`Items: ${totalItems} (${totalQty} qty)`, 14, 80)
+
+    // Items Table
+    const items = cart.map(item => [
+      item.name,
+      item.batch || 'N/A',
+      item.quantity.toString(),
+      formatCurrency(item.price),
+      formatCurrency(item.price * item.quantity)
+    ])
+
+    autoTable(doc, {
+      startY: 88,
+      head: [['Item', 'Batch', 'Qty', 'Price', 'Total']],
+      body: items,
+      theme: 'striped',
+      headStyles: { fillColor: [0, 168, 107], textColor: 255 },
+      styles: { fontSize: 9 },
+      columnStyles: {
+        0: { cellWidth: 60 },
+        1: { cellWidth: 30 },
+        2: { cellWidth: 20, halign: 'center' },
+        3: { cellWidth: 35, halign: 'right' },
+        4: { cellWidth: 35, halign: 'right' }
+      }
+    })
+
+    // Totals - lastAutoTable is added to doc object by the plugin
+    const finalY = (doc.lastAutoTable?.finalY || 150) + 10
+    doc.setFontSize(10)
+    doc.text(`Subtotal: ${formatCurrency(subtotal)}`, 150, finalY, { align: 'right' })
+    doc.text(`Discount: ${formatCurrency(discountAmount)}`, 150, finalY + 7, { align: 'right' })
+    doc.text(`Tax (${taxPercent}%): ${formatCurrency(taxAmount)}`, 150, finalY + 14, { align: 'right' })
+    doc.text(`Shipping: ${formatCurrency(deliveryCost)}`, 150, finalY + 21, { align: 'right' })
+    doc.text(`Other: ${formatCurrency(otherCharge)}`, 150, finalY + 28, { align: 'right' })
+
+    doc.setFontSize(12)
+    doc.setFont(undefined, 'bold')
+    doc.text(`TOTAL PAYABLE: ${formatCurrency(total)}`, 150, finalY + 40, { align: 'right' })
+
+    doc.setFont(undefined, 'normal')
+    doc.setFontSize(10)
+    doc.text(`Amount Paid: ${formatCurrency(received)}`, 150, finalY + 50, { align: 'right' })
+    doc.text(`Change: ${formatCurrency(changeAmt)}`, 150, finalY + 57, { align: 'right' })
+    if (dueAmt > 0) {
+      doc.setTextColor(255, 0, 0)
+      doc.text(`Amount Due: ${formatCurrency(dueAmt)}`, 150, finalY + 64, { align: 'right' })
+    }
+
+    // Footer
+    doc.setTextColor(100, 100, 100)
+    doc.setFontSize(9)
+    doc.text('Thank you for your business!', 105, finalY + 65, { align: 'center' })
+    doc.text('PharmaOS - Your trusted pharmacy management system', 105, finalY + 72, { align: 'center' })
+
+    return doc
+  }
+
+  // -- Save -----------------------------------------------------------------
   const handleSave = async (print = false) => {
     if (cart.length === 0) { toast.error('Add at least one product'); return }
     setSaving(true)
     try {
       const selectedCustomer = customers.find(c => c.id === customerId)
+
+      // Create orders for each cart item - backend expects specific fields only
       for (const item of cart) {
+        // Ensure quantity is a number
+        const qty = parseInt(item.quantity) || 1
+
         await ordersApi.create({
           customerName:  selectedCustomer?.name  || 'Walk In Customer',
           customerPhone: selectedCustomer?.phone || '0000000000',
           productId:     item.id,
-          quantity:      item.quantity,
-          paymentMethod: paymentType.toLowerCase(),
-          amountPaid:    received,
-          amountDue:     dueAmt,
-          customerId:    customerId || undefined,
+          quantity:      qty,
         })
       }
+
       toast.success('Sale saved successfully!')
-      if (print) window.print()
+
+      // Generate and download PDF if print is requested
+      if (print) {
+        const doc = generatePDF()
+        doc.save(`receipt-${Date.now()}.pdf`)
+      }
+
       resetAll()
       navigate('/sales')
     } catch (err) {
@@ -113,7 +213,7 @@ export default function POSView() {
     <PageWrapper title="Sale New">
       <div className="flex flex-col xl:flex-row gap-6 h-[calc(100vh-140px)] min-h-[700px]">
 
-        {/* ── Left: Product Browser ─────────────────────────────────────── */}
+        {/* -- Left: Product Browser ------------------------------------------------ */}
         <div className="flex-1 flex flex-col min-w-0 min-h-[400px]">
           <div className="flex flex-col gap-4 mb-4">
             {/* Category + Manufacturer filters */}
@@ -154,18 +254,18 @@ export default function POSView() {
           {/* Product grid */}
           <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar pb-20">
             <div className="grid grid-cols-[repeat(auto-fill,minmax(140px,1fr))] gap-3">
-            {MOCK_POS_PRODUCTS
+            {products
               .filter(p => p.name.toLowerCase().includes(searchQuery.toLowerCase()))
               .map(p => (
-                <ProductCard key={p.id} name={p.name} price={p.price} stock={p.stock} image={p.image} onClick={() => addToCart(p)} disabled={p.stock <= 0} />
+                <ProductCard key={p.id} name={p.name} price={p.unitPrice} stock={p.quantity} image={p.image || '/images/products/placeholder.svg'} onClick={() => addToCart(p)} disabled={p.quantity <= 0} />
               ))}
             </div>
           </div>
         </div>
 
-        {/* ── Right: Transaction Panel ──────────────────────────────────── */}
+        {/* -- Right: Transaction Panel ------------------------------------------------ */}
         <div className="w-full xl:w-[500px] flex flex-col shrink-0">
-          <div className="flex flex-col h-full bg-white border border-gray-100 rounded-xl shadow-sm overflow-hidden">
+          <div className="flex flex-col h-full bg-white border border-gray-100 rounded-xl shadow-sm overflow-visible">
 
             {/* Quick Actions + Customer */}
             <div className="p-4 border-b border-gray-100">
@@ -265,7 +365,7 @@ export default function POSView() {
               </table>
             </div>
 
-            {/* ── Billing Section ── */}
+            {/* -- Billing Section -- */}
             <div className="p-4 border-t border-gray-100 shrink-0">
               <div className="grid grid-cols-2 gap-x-5">
 
@@ -313,30 +413,21 @@ export default function POSView() {
 
                 {/* Right column: total + adjustments */}
                 <div className="space-y-2.5">
-                  {/* Total header */}
+                  {/* Total Item */}
                   <div className="flex items-center justify-between py-1 border-b border-gray-100">
-                    <span className="text-sm font-black text-gray-800">Total</span>
-                    <span className="text-sm font-black text-gray-900">{formatCurrency(total)}</span>
+                    <span className="text-xs font-bold text-gray-600">TOTAL ITEM</span>
+                    <span className="text-xs font-black text-gray-900">{totalItems} ({totalQty})</span>
                   </div>
 
-                  {/* BIN */}
-                  <div>
-                    <label className="block text-[10px] font-semibold text-gray-500 mb-1">BIN</label>
-                    <div className="flex gap-1">
-                      <div className="relative flex-1">
-                        <select className="w-full pl-2 pr-6 py-2 bg-white border border-gray-200 rounded-lg text-xs font-bold outline-none appearance-none text-gray-500">
-                          <option>Select</option>
-                        </select>
-                        <ChevronDown size={12} className="absolute right-1.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
-                      </div>
-                      <input readOnly value="0.00"
-                        className="w-14 px-2 py-2 bg-gray-50 border border-gray-200 rounded-lg text-xs font-bold text-center text-gray-500 outline-none" />
-                    </div>
+                  {/* Total */}
+                  <div className="flex items-center justify-between py-1">
+                    <span className="text-xs font-bold text-gray-600">TOTAL</span>
+                    <span className="text-sm font-black text-gray-900">{formatCurrency(subtotal)}</span>
                   </div>
 
                   {/* Discount */}
                   <div>
-                    <label className="block text-[10px] font-semibold text-gray-500 mb-1">Discount</label>
+                    <label className="block text-[10px] font-semibold text-gray-500 mb-1">DISCOUNT</label>
                     <div className="flex gap-1">
                       <div className="relative flex-1">
                         <select
@@ -344,7 +435,6 @@ export default function POSView() {
                           onChange={(e) => setDiscountType(e.target.value)}
                           className="w-full pl-2 pr-6 py-2 bg-white border border-gray-200 rounded-lg text-xs font-bold outline-none appearance-none text-gray-600"
                         >
-                          <option value="fixed">Select</option>
                           <option value="fixed">Fixed</option>
                           <option value="percent">Percent %</option>
                         </select>
@@ -353,19 +443,49 @@ export default function POSView() {
                       <input
                         type="number" min="0" value={discount}
                         onChange={(e) => setDiscount(parseFloat(e.target.value) || 0)}
-                        className="w-14 px-2 py-2 bg-white border border-gray-200 rounded-lg text-xs font-bold text-center focus:border-forty-primary outline-none"
+                        className="w-16 px-2 py-2 bg-white border border-gray-200 rounded-lg text-xs font-bold text-center focus:border-forty-primary outline-none"
                       />
                     </div>
                   </div>
 
-                  {/* Delivery Cost */}
+                  {/* Tax Amount (%) */}
                   <div>
-                    <label className="block text-[10px] font-semibold text-gray-500 mb-1">Delivery Cost</label>
+                    <label className="block text-[10px] font-semibold text-gray-500 mb-1">TAX AMOUNT (%)</label>
+                    <div className="flex gap-1">
+                      <input
+                        type="number" min="0" value={taxPercent}
+                        onChange={(e) => setTaxPercent(parseFloat(e.target.value) || 0)}
+                        className="w-16 px-2 py-2 bg-white border border-gray-200 rounded-lg text-xs font-bold text-center focus:border-forty-primary outline-none"
+                      />
+                      <input readOnly value={formatCurrency(taxAmount)}
+                        className="flex-1 px-2 py-2 bg-gray-50 border border-gray-200 rounded-lg text-xs font-bold text-center text-gray-500 outline-none" />
+                    </div>
+                  </div>
+
+                  {/* Shipping/Delivery Charge */}
+                  <div>
+                    <label className="block text-[10px] font-semibold text-gray-500 mb-1">SHIPPING CHARGE</label>
                     <input
                       type="number" min="0" value={deliveryCost}
                       onChange={(e) => setDeliveryCost(parseFloat(e.target.value) || 0)}
                       className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm font-bold focus:border-forty-primary outline-none"
                     />
+                  </div>
+
+                  {/* Other Charge */}
+                  <div>
+                    <label className="block text-[10px] font-semibold text-gray-500 mb-1">OTHER CHARGE</label>
+                    <input
+                      type="number" min="0" value={otherCharge}
+                      onChange={(e) => setOtherCharge(parseFloat(e.target.value) || 0)}
+                      className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm font-bold focus:border-forty-primary outline-none"
+                    />
+                  </div>
+
+                  {/* TOTAL PAYABLE */}
+                  <div className="flex items-center justify-between py-2 border-t-2 border-gray-200 mt-2">
+                    <span className="text-sm font-black text-gray-800">TOTAL PAYABLE</span>
+                    <span className="text-lg font-black text-forty-primary">{formatCurrency(total)}</span>
                   </div>
                 </div>
               </div>

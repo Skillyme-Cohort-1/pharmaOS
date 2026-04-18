@@ -22,10 +22,11 @@ import {
 
 const navItems = [
   { to: '/', label: 'Dashboard', icon: LayoutDashboard },
-  { 
-    label: 'Sales', 
+  {
+    label: 'Sales',
     icon: ShoppingCart,
     subItems: [
+      { to: '/pos', label: 'Pharmacist POS' },
       { to: '/sales/new', label: 'Sale New' },
       { to: '/sales', label: 'Sale List' },
     ]
