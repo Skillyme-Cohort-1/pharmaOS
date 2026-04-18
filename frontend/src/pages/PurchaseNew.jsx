@@ -262,7 +262,7 @@ export default function PurchaseNew() {
                       name={product.name}
                       price={product.price}
                       stock={product.stock}
-                      image={product.image}
+                      image={product.image || '/images/products/placeholder.svg'}
                       onClick={() => addToCart(product)}
                     />
                   ))}
