@@ -342,7 +342,7 @@ export default function POSView() {
                     <tr key={item.id} className="hover:bg-gray-50/50 transition-colors">
                       <td className="px-3 py-2">
                         <div className="w-10 h-10 rounded bg-gray-100 border border-gray-200 overflow-hidden flex items-center justify-center">
-                          <img src={item.image} className="w-full h-full object-cover" alt={item.name} />
+                          <img src={item.image || '/images/products/placeholder.svg'} className="w-full h-full object-cover" alt={item.name} />
                         </div>
                       </td>
                       <td className="px-3 py-2 text-[10px] font-bold text-gray-700 min-w-[80px] max-w-[80px] truncate">{item.name}</td>
