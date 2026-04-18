@@ -272,7 +272,7 @@ export default function PurchaseNew() {
         </div>
         {/* Right Section: Transaction Panel */}
         <div className="w-full lg:w-[450px] xl:w-[600px] flex flex-col shrink-0">
-          <div className="flex flex-col h-full bg-white border border-gray-100 rounded-xl shadow-sm overflow-hidden">
+          <div className="flex flex-col h-full bg-white border border-gray-100 rounded-xl shadow-sm overflow-visible">
             {/* Quick Actions & Header */}
             <div className="p-4 border-b border-gray-100 relative">
                <div className="flex items-center justify-between mb-4">
