@@ -51,7 +51,7 @@ const navItems = [
     label: 'Products', 
     icon: Package,
     subItems: [
-      { to: '/products/new', label: 'Add Product' },
+      { to: '/products', label: 'Add Product' },
       { to: '/products', label: 'All Product' },
       { to: '/products/barcodes', label: 'Print Barcode' },
     ]
