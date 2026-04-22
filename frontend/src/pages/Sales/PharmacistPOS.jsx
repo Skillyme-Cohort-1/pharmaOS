@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import {
   Search, Plus, User, ShoppingCart, FileText, BookOpen,
   Calendar, X, ChevronDown, Trash2, Minus, Barcode,
-  Receipt, PauseCircle
+  Receipt, PauseCircle, Check
 } from 'lucide-react'
 import { useToast } from '../../context/ToastContext'
 import { useCustomers } from '../../hooks/useCustomers'
@@ -284,6 +284,8 @@ export default function PharmacistPOS() {
   const [saving, setSaving] = useState(false)
   const [showProductList, setShowProductList] = useState(false)
   const [products, setProducts] = useState([])
+  const [selectedProducts, setSelectedProducts] = useState([])
+  const [modalSearchQuery, setModalSearchQuery] = useState('')
 
   // Calculate totals
   const subtotal = useMemo(() => {
@@ -312,23 +314,49 @@ export default function PharmacistPOS() {
   }, [])
 
   const addToCart = (product) => {
-    if ((product.quantity || product.stock || 0) <= 0) {
-      toast.error('Product is out of stock')
-      return
-    }
-
     setCart(prev => {
-      const existing = prev.find(i => i.id === product.id)
+      const existing = prev.find(item => item.id === product.id)
       if (existing) {
-        return prev.map(i =>
-          i.id === product.id
-            ? { ...i, quantity: Math.min(i.quantity + 1, product.quantity || product.stock || 999) }
-            : i
+        return prev.map(item =>
+          item.id === product.id
+            ? { ...item, quantity: item.quantity + 1 }
+            : item
         )
       }
       return [...prev, { ...product, quantity: 1 }]
     })
-    toast.success(`${product.name} added to cart`)
+  }
+
+  // Multi-select product modal handlers
+  const toggleProductSelection = (product) => {
+    setSelectedProducts(prev => {
+      const isSelected = prev.find(p => p.id === product.id)
+      if (isSelected) {
+        return prev.filter(p => p.id !== product.id)
+      }
+      return [...prev, product]
+    })
+  }
+
+  const confirmProductSelection = () => {
+    selectedProducts.forEach(product => {
+      if ((product.quantity || product.stock || 0) > 0) {
+        setCart(prev => {
+          const existing = prev.find(item => item.id === product.id)
+          if (existing) return prev
+          return [...prev, { ...product, quantity: 1 }]
+        })
+      }
+    })
+    setSelectedProducts([])
+    setModalSearchQuery('')
+    setShowProductList(false)
+  }
+
+  const closeProductModal = () => {
+    setShowProductList(false)
+    setSelectedProducts([])
+    setModalSearchQuery('')
   }
 
   const updateQty = (id, delta) => {
@@ -568,7 +596,7 @@ export default function PharmacistPOS() {
         </div>
 
         {/* Bottom Action Bar */}
-        <div className="h-20 bg-[#F5A623] flex items-center px-6 gap-4 shadow-lg">
+        <div className="h-24 bg-[#F5A623] flex items-center px-6 gap-4 shadow-lg">
           {/* Total Display */}
           <div className="flex items-center gap-2 text-white">
             <span className="text-sm font-medium opacity-80">KSH</span>
@@ -577,14 +605,17 @@ export default function PharmacistPOS() {
 
           <div className="flex-1" />
 
-          {/* Date Picker */}
-          <div className="flex items-center gap-2 bg-white/20 rounded-lg px-3 py-2">
-            <Calendar size={18} className="text-white" />
+          {/* Date Picker - More Visible */}
+          <div className="flex flex-col items-center bg-white rounded-xl px-4 py-2 shadow-lg border-2 border-white">
+            <div className="flex items-center gap-2 mb-1">
+              <Calendar size={16} className="text-[#00A86B]" />
+              <span className="text-xs font-bold text-gray-600 uppercase tracking-wide">Sale Date</span>
+            </div>
             <input
               type="date"
               value={transactionDate}
               onChange={(e) => setTransactionDate(e.target.value)}
-              className="bg-transparent text-white font-medium text-sm focus:outline-none [color-scheme:dark]"
+              className="bg-transparent text-gray-800 font-bold text-sm focus:outline-none cursor-pointer"
             />
           </div>
 
@@ -608,28 +639,136 @@ export default function PharmacistPOS() {
         </div>
       </div>
 
-      {/* Product List Modal */}
+      {/* Product List Modal - Multi-Select */}
       {showProductList && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl w-full max-w-4xl max-h-[80vh] flex flex-col shadow-2xl">
-            <div className="flex items-center justify-between p-4 border-b border-gray-200">
-              <h2 className="text-xl font-bold text-gray-800">Select Products</h2>
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl w-full max-w-5xl h-[90vh] flex flex-col shadow-2xl">
+            {/* Modal Header */}
+            <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between bg-gray-50 rounded-t-2xl shrink-0">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-[#00A86B] rounded-lg flex items-center justify-center">
+                  <ShoppingCart size={20} className="text-white" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold text-gray-800">Select Products</h2>
+                  <p className="text-sm text-gray-500">{selectedProducts.length} products selected</p>
+                </div>
+              </div>
               <button
-                onClick={() => setShowProductList(false)}
-                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                onClick={closeProductModal}
+                className="p-2 hover:bg-gray-200 rounded-lg transition-colors"
               >
                 <X size={24} className="text-gray-500" />
               </button>
             </div>
-            <div className="p-4 overflow-y-auto flex-1 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-              {products.map((product) => (
-                <ProductCard
-                  key={product.id}
-                  product={product}
-                  onSelect={() => { addToCart(product); setShowProductList(false) }}
-                  disabled={(product.quantity || product.stock || 0) <= 0}
+
+            {/* Search Bar */}
+            <div className="px-6 py-3 border-b border-gray-200 bg-white shrink-0">
+              <div className="relative">
+                <input
+                  type="text"
+                  placeholder="Search products by name..."
+                  value={modalSearchQuery}
+                  onChange={(e) => setModalSearchQuery(e.target.value)}
+                  className="w-full pl-12 pr-4 py-3 bg-gray-100 border-2 border-gray-200 rounded-xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-[#00A86B] focus:border-[#00A86B] transition-all"
                 />
-              ))}
+                <Search size={20} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
+              </div>
+            </div>
+
+            {/* Products Grid with Multi-Select */}
+            <div className="flex-1 overflow-y-auto p-6 bg-gray-50">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                {products
+                  .filter(p => p.name.toLowerCase().includes(modalSearchQuery.toLowerCase()))
+                  .map((product) => {
+                    const isSelected = selectedProducts.find(p => p.id === product.id)
+                    const isDisabled = (product.quantity || product.stock || 0) <= 0
+                    return (
+                      <div
+                        key={product.id}
+                        onClick={() => !isDisabled && toggleProductSelection(product)}
+                        className={`relative flex flex-col bg-white border-2 rounded-xl overflow-hidden transition-all duration-200 ${
+                          isSelected
+                            ? 'border-[#00A86B] shadow-lg ring-2 ring-[#00A86B]/20'
+                            : 'border-gray-200 hover:border-[#00A86B]/50 hover:shadow-md'
+                        } ${isDisabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+                      >
+                        {/* Selection Checkbox - Top Right */}
+                        <div className={`absolute top-3 right-3 w-7 h-7 rounded-full border-2 flex items-center justify-center shadow-sm z-20 transition-all ${
+                          isSelected
+                            ? 'bg-[#00A86B] border-[#00A86B]'
+                            : 'bg-white border-gray-300'
+                        }`}>
+                          {isSelected && <Check size={16} className="text-white font-bold" />}
+                        </div>
+
+                        {/* Selected Overlay */}
+                        {isSelected && (
+                          <div className="absolute inset-0 bg-[#00A86B]/5 pointer-events-none z-0" />
+                        )}
+
+                        {/* Product Image */}
+                        <div className="h-28 w-full bg-gray-100 overflow-hidden relative shrink-0 flex items-center justify-center">
+                          {product.image ? (
+                            <img
+                              src={product.image}
+                              alt={product.name}
+                              className="w-full h-full object-contain p-3"
+                            />
+                          ) : (
+                            <ShoppingCart size={32} className="text-gray-400" />
+                          )}
+                        </div>
+
+                        {/* Product Info */}
+                        <div className="p-3 space-y-2 flex-1 flex flex-col">
+                          <h4 className="text-xs font-bold text-gray-800 line-clamp-2 leading-tight min-h-[2rem]">{product.name}</h4>
+                          <div className="flex items-center justify-between mt-auto">
+                            <p className="text-sm font-black text-[#00A86B]">{formatCurrency(product.unitPrice || 0)}</p>
+                            <span className={`text-[10px] font-bold px-2 py-1 rounded-full ${
+                              (product.quantity || product.stock || 0) > 10 ? 'bg-emerald-100 text-emerald-700' :
+                              (product.quantity || product.stock || 0) > 0 ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-700'
+                            }`}>
+                              {(product.quantity || product.stock || 0) > 0 ? `${product.quantity || product.stock}` : 'Out'}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  })}
+              </div>
+              {products.filter(p => p.name.toLowerCase().includes(modalSearchQuery.toLowerCase())).length === 0 && (
+                <div className="text-center py-16 text-gray-400">
+                  <ShoppingCart size={64} className="mx-auto mb-4 opacity-20" />
+                  <p className="text-lg font-medium">No products found</p>
+                  <p className="text-sm mt-1">Try adjusting your search</p>
+                </div>
+              )}
+            </div>
+
+            {/* Modal Footer with Confirm/Cancel Buttons */}
+            <div className="px-6 py-4 border-t-2 border-gray-200 bg-white rounded-b-2xl flex items-center justify-between shrink-0">
+              <div className="flex items-center gap-2">
+                <span className="text-2xl font-black text-[#00A86B]">{selectedProducts.length}</span>
+                <span className="text-sm text-gray-600 font-medium">products selected</span>
+              </div>
+              <div className="flex gap-3">
+                <button
+                  onClick={closeProductModal}
+                  className="px-6 py-3 border-2 border-gray-300 text-gray-700 rounded-xl text-sm font-bold hover:bg-gray-100 hover:border-gray-400 transition-all"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={confirmProductSelection}
+                  disabled={selectedProducts.length === 0}
+                  className="px-6 py-3 bg-[#00A86B] text-white rounded-xl text-sm font-bold hover:bg-[#008f5b] transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 shadow-lg shadow-[#00A86B]/20"
+                >
+                  <Check size={18} />
+                  Confirm Selection
+                </button>
+              </div>
             </div>
           </div>
         </div>

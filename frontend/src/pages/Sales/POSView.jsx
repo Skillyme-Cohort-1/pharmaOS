@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Calculator, Plus, Power, X, ChevronDown, ShoppingCart, Check, Calendar } from 'lucide-react'
+import { Calculator, Plus, Power, X, ChevronDown, ShoppingCart } from 'lucide-react'
 import { jsPDF } from 'jspdf'
 import autoTable from 'jspdf-autotable'
 import PageWrapper from '../../components/layout/PageWrapper'
@@ -33,10 +33,6 @@ export default function POSView() {
   const [showCalc,      setShowCalc]      = useState(false)
   const [calcDisplay,   setCalcDisplay]   = useState('0')
   const [calcExpr,      setCalcExpr]      = useState('')
-  const [showProductModal, setShowProductModal] = useState(false)
-  const [selectedProducts, setSelectedProducts] = useState([])
-  const [modalSearchQuery, setModalSearchQuery] = useState('')
-  const [saleDate, setSaleDate] = useState(new Date().toISOString().split('T')[0])
 
   // Load products from API
   useEffect(() => {
@@ -75,38 +71,6 @@ export default function POSView() {
       if (ex) return prev.map(i => i.id === p.id ? { ...i, quantity: i.quantity + 1 } : i)
       return [...prev, { ...p, price: p.unitPrice, quantity: 1, batch: 'B' + Math.floor(Math.random() * 900 + 100) }]
     })
-  }
-
-  // -- Multi-select product modal handlers ----------------------------------
-  const toggleProductSelection = (product) => {
-    setSelectedProducts(prev => {
-      const isSelected = prev.find(p => p.id === product.id)
-      if (isSelected) {
-        return prev.filter(p => p.id !== product.id)
-      }
-      return [...prev, product]
-    })
-  }
-
-  const confirmSelection = () => {
-    selectedProducts.forEach(product => {
-      if (product.quantity > 0) {
-        setCart(prev => {
-          const ex = prev.find(i => i.id === product.id)
-          if (ex) return prev
-          return [...prev, { ...product, price: product.unitPrice, quantity: 1, batch: 'B' + Math.floor(Math.random() * 900 + 100) }]
-        })
-      }
-    })
-    setSelectedProducts([])
-    setShowProductModal(false)
-    setModalSearchQuery('')
-  }
-
-  const closeModal = () => {
-    setShowProductModal(false)
-    setSelectedProducts([])
-    setModalSearchQuery('')
   }
   const updateQty    = (id, delta) => setCart(prev => prev.map(i => i.id === id ? { ...i, quantity: Math.max(1, i.quantity + delta) } : i))
   const removeItem   = (id) => setCart(prev => prev.filter(i => i.id !== id))
@@ -308,7 +272,6 @@ export default function POSView() {
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-sm font-bold text-gray-800">Quick Action</h3>
                 <div className="flex gap-1.5 flex-wrap">
-                  <button onClick={() => setShowProductModal(true)} className="px-3 py-2 bg-forty-primary text-white border border-forty-primary rounded text-xs font-bold hover:bg-forty-primary/90 transition-all whitespace-nowrap flex items-center gap-1"><Plus size={14} /> Add Product</button>
                   <button onClick={() => navigate('/stock/current')} className="px-3 py-2 bg-white border border-gray-200 rounded text-xs font-bold text-gray-600 hover:text-forty-primary hover:border-forty-primary hover:bg-forty-primary/5 transition-all whitespace-nowrap">Stock List</button>
                   <button onClick={() => navigate('/sales')} className="px-3 py-2 bg-white border border-gray-200 rounded text-xs font-bold text-gray-600 hover:text-forty-primary hover:border-forty-primary hover:bg-forty-primary/5 transition-all whitespace-nowrap">Today Sales</button>
                   <button onClick={() => setShowCalc(!showCalc)} className="p-2 bg-white border border-gray-200 rounded text-gray-600 hover:text-forty-primary hover:border-forty-primary hover:bg-forty-primary/5 transition-all"><Calculator size={16} /></button>
@@ -528,25 +491,6 @@ export default function POSView() {
               </div>
             </div>
 
-            {/* Sale Date Selector - More Visible */}
-            <div className="px-4 py-3 bg-forty-primary/5 border-y border-gray-100 shrink-0">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Calendar size={18} className="text-forty-primary" />
-                  <span className="text-sm font-bold text-gray-700">Sale Date</span>
-                </div>
-                <div className="relative">
-                  <input
-                    type="date"
-                    value={saleDate}
-                    onChange={(e) => setSaleDate(e.target.value)}
-                    className="pl-3 pr-8 py-2 bg-white border-2 border-forty-primary rounded-lg text-sm font-bold text-gray-800 focus:outline-none focus:ring-2 focus:ring-forty-primary/20 cursor-pointer"
-                  />
-                  <Calendar size={16} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-forty-primary pointer-events-none" />
-                </div>
-              </div>
-            </div>
-
             {/* Footer buttons */}
             <div className="grid grid-cols-3 gap-3 p-4 bg-gray-50 border-t border-gray-100 shrink-0">
               <button onClick={resetAll} className="py-3 bg-white border border-[#FF6565] text-[#FF6565] rounded-lg text-xs font-black uppercase hover:bg-red-50 transition-colors">
@@ -562,133 +506,6 @@ export default function POSView() {
           </div>
         </div>
       </div>
-
-      {/* Product Multi-Select Modal */}
-      {showProductModal && (
-        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-xl shadow-2xl w-full max-w-5xl h-[90vh] flex flex-col">
-            {/* Modal Header */}
-            <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between bg-gray-50 rounded-t-xl shrink-0">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-teal-600 rounded-lg flex items-center justify-center">
-                  <ShoppingCart size={20} className="text-white" />
-                </div>
-                <div>
-                  <h2 className="text-lg font-bold text-gray-800">Select Products</h2>
-                  <p className="text-xs text-gray-500">{selectedProducts.length} products selected</p>
-                </div>
-              </div>
-              <button onClick={closeModal} className="p-2 hover:bg-gray-200 rounded-lg transition-colors">
-                <X size={24} className="text-gray-500" />
-              </button>
-            </div>
-
-            {/* Search Bar */}
-            <div className="px-6 py-3 border-b border-gray-200 bg-white shrink-0">
-              <div className="relative">
-                <input
-                  type="text"
-                  placeholder="Search products by name..."
-                  value={modalSearchQuery}
-                  onChange={(e) => setModalSearchQuery(e.target.value)}
-                  className="w-full pl-12 pr-4 py-3 bg-gray-100 border-2 border-gray-200 rounded-xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition-all"
-                />
-                <ShoppingCart size={20} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
-              </div>
-            </div>
-
-            {/* Products Grid with Checkboxes */}
-            <div className="flex-1 overflow-y-auto p-6 custom-scrollbar bg-gray-50">
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-                {products
-                  .filter(p => p.name.toLowerCase().includes(modalSearchQuery.toLowerCase()))
-                  .map(product => {
-                    const isSelected = selectedProducts.find(p => p.id === product.id)
-                    return (
-                      <div
-                        key={product.id}
-                        onClick={() => product.quantity > 0 && toggleProductSelection(product)}
-                        className={`relative flex flex-col bg-white border-2 rounded-xl overflow-hidden transition-all duration-200 ${
-                          isSelected
-                            ? 'border-teal-600 shadow-lg ring-2 ring-teal-600/20'
-                            : 'border-gray-200 hover:border-teal-400 hover:shadow-md'
-                        } ${product.quantity <= 0 ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
-                      >
-                        {/* Selection Checkbox Indicator - Top Right */}
-                        <div className={`absolute top-3 right-3 w-7 h-7 rounded-full border-2 flex items-center justify-center shadow-sm z-20 ${
-                          isSelected 
-                            ? 'bg-teal-600 border-teal-600' 
-                            : 'bg-white border-gray-300 hover:border-teal-400'
-                        }`}>
-                          {isSelected && <Check size={16} className="text-white font-bold" />}
-                        </div>
-
-                        {/* Selected Overlay */}
-                        {isSelected && (
-                          <div className="absolute inset-0 bg-teal-600/5 pointer-events-none z-0" />
-                        )}
-
-                        {/* Product Image */}
-                        <div className="h-28 w-full bg-gray-100 overflow-hidden relative shrink-0">
-                          <img
-                            src={product.image || '/images/products/placeholder.svg'}
-                            alt={product.name}
-                            className="w-full h-full object-contain p-3"
-                          />
-                        </div>
-
-                        {/* Product Info */}
-                        <div className="p-3 space-y-2 flex-1 flex flex-col">
-                          <h4 className="text-xs font-bold text-gray-800 line-clamp-2 leading-tight min-h-[2rem]">{product.name}</h4>
-                          <div className="flex items-center justify-between mt-auto">
-                            <p className="text-sm font-black text-teal-600">{formatCurrency(product.unitPrice)}</p>
-                            <span className={`text-[10px] font-bold px-2 py-1 rounded-full ${
-                              product.quantity > 10 ? 'bg-emerald-100 text-emerald-700' : 
-                              product.quantity > 0 ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-700'
-                            }`}>
-                              {product.quantity > 0 ? `${product.quantity}` : 'Out'}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                    )
-                  })}
-              </div>
-              {products.filter(p => p.name.toLowerCase().includes(modalSearchQuery.toLowerCase())).length === 0 && (
-                <div className="text-center py-16 text-gray-400">
-                  <ShoppingCart size={64} className="mx-auto mb-4 opacity-20" />
-                  <p className="text-lg font-medium">No products found</p>
-                  <p className="text-sm mt-1">Try adjusting your search</p>
-                </div>
-              )}
-            </div>
-
-            {/* Modal Footer with Confirm Button - Always Visible */}
-            <div className="px-6 py-4 border-t-2 border-gray-200 bg-white rounded-b-xl flex items-center justify-between shrink-0">
-              <div className="flex items-center gap-2">
-                <span className="text-2xl font-black text-teal-600">{selectedProducts.length}</span>
-                <span className="text-sm text-gray-600 font-medium">products selected</span>
-              </div>
-              <div className="flex gap-3">
-                <button 
-                  onClick={closeModal} 
-                  className="px-6 py-3 border-2 border-gray-300 text-gray-700 rounded-xl text-sm font-bold hover:bg-gray-100 hover:border-gray-400 transition-all"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={confirmSelection}
-                  disabled={selectedProducts.length === 0}
-                  className="px-6 py-3 bg-teal-600 text-white rounded-xl text-sm font-bold hover:bg-teal-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 shadow-lg shadow-teal-600/20"
-                >
-                  <Check size={18} />
-                  Confirm Selection
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </PageWrapper>
   )
 }
