@@ -565,107 +565,123 @@ export default function POSView() {
 
       {/* Product Multi-Select Modal */}
       {showProductModal && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[85vh] flex flex-col">
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-5xl h-[90vh] flex flex-col">
             {/* Modal Header */}
-            <div className="p-4 border-b border-gray-100 flex items-center justify-between bg-gray-50 rounded-t-xl">
-              <div>
-                <h2 className="text-lg font-bold text-gray-800">Select Products</h2>
-                <p className="text-xs text-gray-500 mt-0.5">{selectedProducts.length} products selected</p>
+            <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between bg-gray-50 rounded-t-xl shrink-0">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-teal-600 rounded-lg flex items-center justify-center">
+                  <ShoppingCart size={20} className="text-white" />
+                </div>
+                <div>
+                  <h2 className="text-lg font-bold text-gray-800">Select Products</h2>
+                  <p className="text-xs text-gray-500">{selectedProducts.length} products selected</p>
+                </div>
               </div>
               <button onClick={closeModal} className="p-2 hover:bg-gray-200 rounded-lg transition-colors">
-                <X size={20} className="text-gray-500" />
+                <X size={24} className="text-gray-500" />
               </button>
             </div>
 
             {/* Search Bar */}
-            <div className="p-4 border-b border-gray-100">
+            <div className="px-6 py-3 border-b border-gray-200 bg-white shrink-0">
               <div className="relative">
                 <input
                   type="text"
                   placeholder="Search products by name..."
                   value={modalSearchQuery}
                   onChange={(e) => setModalSearchQuery(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-lg text-sm font-bold focus:outline-none focus:ring-2 focus:ring-forty-primary focus:border-forty-primary"
+                  className="w-full pl-12 pr-4 py-3 bg-gray-100 border-2 border-gray-200 rounded-xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition-all"
                 />
-                <ShoppingCart size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                <ShoppingCart size={20} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
               </div>
             </div>
 
             {/* Products Grid with Checkboxes */}
-            <div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
-              <div className="grid grid-cols-[repeat(auto-fill,minmax(160px,1fr))] gap-3">
+            <div className="flex-1 overflow-y-auto p-6 custom-scrollbar bg-gray-50">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
                 {products
                   .filter(p => p.name.toLowerCase().includes(modalSearchQuery.toLowerCase()))
                   .map(product => {
                     const isSelected = selectedProducts.find(p => p.id === product.id)
                     return (
-                      <button
+                      <div
                         key={product.id}
-                        onClick={() => toggleProductSelection(product)}
-                        disabled={product.quantity <= 0}
-                        className={`relative flex flex-col text-left bg-white border-2 rounded-xl overflow-hidden transition-all duration-200 ${
+                        onClick={() => product.quantity > 0 && toggleProductSelection(product)}
+                        className={`relative flex flex-col bg-white border-2 rounded-xl overflow-hidden transition-all duration-200 ${
                           isSelected
-                            ? 'border-forty-primary bg-forty-primary/5 shadow-md'
-                            : 'border-gray-200 hover:border-forty-primary/50 hover:shadow-sm'
+                            ? 'border-teal-600 shadow-lg ring-2 ring-teal-600/20'
+                            : 'border-gray-200 hover:border-teal-400 hover:shadow-md'
                         } ${product.quantity <= 0 ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
                       >
-                        {/* Selection Checkbox Indicator */}
-                        <div className={`absolute top-2 right-2 w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all z-10 ${
-                          isSelected ? 'bg-forty-primary border-forty-primary' : 'bg-white border-gray-300'
+                        {/* Selection Checkbox Indicator - Top Right */}
+                        <div className={`absolute top-3 right-3 w-7 h-7 rounded-full border-2 flex items-center justify-center shadow-sm z-20 ${
+                          isSelected 
+                            ? 'bg-teal-600 border-teal-600' 
+                            : 'bg-white border-gray-300 hover:border-teal-400'
                         }`}>
-                          {isSelected && <Check size={14} className="text-white" />}
+                          {isSelected && <Check size={16} className="text-white font-bold" />}
                         </div>
 
+                        {/* Selected Overlay */}
+                        {isSelected && (
+                          <div className="absolute inset-0 bg-teal-600/5 pointer-events-none z-0" />
+                        )}
+
                         {/* Product Image */}
-                        <div className="h-24 w-full bg-gray-50 overflow-hidden relative">
+                        <div className="h-28 w-full bg-gray-100 overflow-hidden relative shrink-0">
                           <img
                             src={product.image || '/images/products/placeholder.svg'}
                             alt={product.name}
-                            className="w-full h-full object-contain p-2"
+                            className="w-full h-full object-contain p-3"
                           />
                         </div>
 
                         {/* Product Info */}
-                        <div className="p-3 space-y-1">
-                          <h4 className="text-[11px] font-bold text-gray-800 line-clamp-2 leading-tight">{product.name}</h4>
-                          <div className="flex items-center justify-between">
-                            <p className="text-[11px] font-black text-forty-primary">{formatCurrency(product.unitPrice)}</p>
-                            <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-sm ${
-                              product.quantity > 10 ? 'bg-emerald-50 text-emerald-700' : 
-                              product.quantity > 0 ? 'bg-amber-50 text-amber-700' : 'bg-red-50 text-red-700'
+                        <div className="p-3 space-y-2 flex-1 flex flex-col">
+                          <h4 className="text-xs font-bold text-gray-800 line-clamp-2 leading-tight min-h-[2rem]">{product.name}</h4>
+                          <div className="flex items-center justify-between mt-auto">
+                            <p className="text-sm font-black text-teal-600">{formatCurrency(product.unitPrice)}</p>
+                            <span className={`text-[10px] font-bold px-2 py-1 rounded-full ${
+                              product.quantity > 10 ? 'bg-emerald-100 text-emerald-700' : 
+                              product.quantity > 0 ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-700'
                             }`}>
-                              {product.quantity > 0 ? `${product.quantity} left` : 'Out'}
+                              {product.quantity > 0 ? `${product.quantity}` : 'Out'}
                             </span>
                           </div>
                         </div>
-                      </button>
+                      </div>
                     )
                   })}
               </div>
               {products.filter(p => p.name.toLowerCase().includes(modalSearchQuery.toLowerCase())).length === 0 && (
-                <div className="text-center py-12 text-gray-400">
-                  <ShoppingCart size={48} className="mx-auto mb-3 opacity-30" />
-                  <p className="text-sm font-medium">No products found</p>
+                <div className="text-center py-16 text-gray-400">
+                  <ShoppingCart size={64} className="mx-auto mb-4 opacity-20" />
+                  <p className="text-lg font-medium">No products found</p>
+                  <p className="text-sm mt-1">Try adjusting your search</p>
                 </div>
               )}
             </div>
 
-            {/* Modal Footer with Confirm Button */}
-            <div className="p-4 border-t border-gray-100 bg-gray-50 rounded-b-xl flex items-center justify-between">
-              <div className="text-sm text-gray-600">
-                <span className="font-bold text-forty-primary">{selectedProducts.length}</span> products selected
+            {/* Modal Footer with Confirm Button - Always Visible */}
+            <div className="px-6 py-4 border-t-2 border-gray-200 bg-white rounded-b-xl flex items-center justify-between shrink-0">
+              <div className="flex items-center gap-2">
+                <span className="text-2xl font-black text-teal-600">{selectedProducts.length}</span>
+                <span className="text-sm text-gray-600 font-medium">products selected</span>
               </div>
               <div className="flex gap-3">
-                <button onClick={closeModal} className="px-5 py-2.5 border border-gray-300 text-gray-700 rounded-lg text-sm font-bold hover:bg-gray-100 transition-colors">
+                <button 
+                  onClick={closeModal} 
+                  className="px-6 py-3 border-2 border-gray-300 text-gray-700 rounded-xl text-sm font-bold hover:bg-gray-100 hover:border-gray-400 transition-all"
+                >
                   Cancel
                 </button>
                 <button
                   onClick={confirmSelection}
                   disabled={selectedProducts.length === 0}
-                  className="px-5 py-2.5 bg-forty-primary text-white rounded-lg text-sm font-bold hover:bg-forty-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                  className="px-6 py-3 bg-teal-600 text-white rounded-xl text-sm font-bold hover:bg-teal-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 shadow-lg shadow-teal-600/20"
                 >
-                  <Check size={16} />
+                  <Check size={18} />
                   Confirm Selection
                 </button>
               </div>
